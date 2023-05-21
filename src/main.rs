@@ -1,6 +1,6 @@
-use allfns::Solution;
+use abs::Solution;
 
-pub mod allfns;
+pub mod abs;
 
 // use std::cmp::Ordering;
 // use std::fmt::Debug;
