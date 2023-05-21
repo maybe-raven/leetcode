@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub struct Solution {}
 
@@ -46,17 +46,15 @@ trait VariableMap<'a> {
         &self,
         variable: VariableLabel,
         as_multiples_of: VariableLabel,
-        opt_stack: Option<VecDeque<VariableLabel>>,
+        visited: &mut HashSet<VariableLabel>,
     ) -> Option<Value> {
         self.get_expressions(variable).and_then(|expr| {
             expr.get_multiplier(as_multiples_of).or_else(|| {
-                let stack = opt_stack.unwrap_or_default();
                 expr.iter()
-                    .filter(|(key, _)| !stack.contains(key))
+                    .filter(|(&key, _)| !visited.contains(key))
                     .find_map(|(&key, &multiplier_0)| {
-                        let mut new_stack = stack.clone();
-                        new_stack.push_front(key);
-                        self.get_value_of(key, as_multiples_of, Some(new_stack))
+                        visited.insert(key);
+                        self.get_value_of(key, as_multiples_of, visited)
                             .map(|multiplier_1| multiplier_0 * multiplier_1)
                     })
             })
@@ -65,7 +63,8 @@ trait VariableMap<'a> {
 
     fn get_value<T: VariablePair>(&self, variable_pair: &T) -> Option<Value> {
         let (top_variable, bottom_variable) = variable_pair.unpack();
-        self.get_value_of(top_variable, bottom_variable, None)
+        let visited = HashSet::new();
+        self.get_value_of(top_variable, bottom_variable, &mut visited)
     }
 }
 

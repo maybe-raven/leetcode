@@ -1,6 +1,6 @@
-use concrete::Solution;
+use allfns::Solution;
 
-pub mod concrete;
+pub mod allfns;
 
 // use std::cmp::Ordering;
 // use std::fmt::Debug;
