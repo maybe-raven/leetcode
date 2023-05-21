@@ -1,6 +1,6 @@
 use concrete::Solution;
 
-mod concrete;
+pub mod concrete;
 
 // use std::cmp::Ordering;
 // use std::fmt::Debug;
