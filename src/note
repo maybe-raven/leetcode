@@ -1,0 +1,23 @@
+a/b = 2
+b/c = 3
+
+a = 2b
+b = a/2, 3c
+c = b/3
+
+a/c = 6b/b
+b/a = (a/2)/a, b/2b
+
+Need an associations map
+a => %{b => 2}
+b => %{a => 1/2, c => 3}
+c => %{b => 1/3}
+
+If `var_a` contains a key == `var_b`, then result is `value`
+Else if `var_a` and `var_b` has a common key `var_c`, then result is `var_a => var_c / var_b => var_c`
+Else -1.0
+
+variable_expressions = %{var_a => %{var_b => expr}}
+for [[var_a, var_b], value] in [equations, values] do
+
+end
