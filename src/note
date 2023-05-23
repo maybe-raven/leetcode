@@ -1,23 +1,27 @@
-a/b = 2
-b/c = 3
+type A = &'a str
+type B = &'b str
 
-a = 2b
-b = a/2, 3c
-c = b/3
+given F<'a, T> = &'a T
+A = F<'a, str>
+B = F<'b, str>
+to use A in place of B, we need A: B
+for A: B to be true, then 'a: 'b
+since &'a T is covariant over 'a
 
-a/c = 6b/b
-b/a = (a/2)/a, b/2b
+self: &'b Self = &'b GraphSolver<Node, Weight, Connections>
+start: &'c Node
+end: &'d Node
+edges: &'b Connections
+<Self as Graph<Node, Weight, Connections>>::get_connections_from(&'b Graph<Node, Weight, Connections>, &'c Node) -> Option<&'b Connections>;
 
-Need an associations map
-a => %{b => 2}
-b => %{a => 1/2, c => 3}
-c => %{b => 1/3}
+result: Option<&'b Weight>
+<Connections as ConnectionCollection<Node, Weight>>::get_weight_to(&'b Connections, &'d Node) -> Option<&'b Weight>;
 
-If `var_a` contains a key == `var_b`, then result is `value`
-Else if `var_a` and `var_b` has a common key `var_c`, then result is `var_a => var_c / var_b => var_c`
-Else -1.0
+<&'b Connections as IntoIterator>::into_iter(&'b Connections) -> ???
+item: ConnectionTo<&'b Node, &'b Weight>
+next: &'b Node
+weight: &'b Weight
 
-variable_expressions = %{var_a => %{var_b => expr}}
-for [[var_a, var_b], value] in [equations, values] do
-
-end
+visited: &'e mut HashSet<&'f Node>
+HashSet::<&'f Node>::(&'e Self, &'f Node)
+&'b Node: &'f Node -> 'b: 'f

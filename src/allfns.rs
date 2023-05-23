@@ -13,6 +13,10 @@ fn get_value(
         return None;
     }
 
+    if top_variable == bottom_variable {
+        return Some(1.0);
+    }
+
     let mut visited = HashSet::new();
     dfs(graph, &mut visited, top_variable, bottom_variable)
 }
@@ -23,12 +27,15 @@ fn dfs<'a>(
     start: &str,
     end: &str,
 ) -> Option<f64> {
-    if start == end {
-        return Some(1.0);
+    let edges = graph
+        .get(start)
+        .expect("Both `start` and `end` should be in `graph`.");
+
+    if let Some(&result) = edges.get(end) {
+        return Some(result);
     }
 
-    let edges = graph.get(start).expect("Invalid graph or start/end point.");
-    for (&next, weight) in edges {
+    for (&next, &weight) in edges {
         if visited.contains(next) {
             continue;
         }

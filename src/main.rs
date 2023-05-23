@@ -1,89 +1,49 @@
-use abs::Solution;
+use std::{
+    collections::{HashMap, HashSet},
+    ops::{Deref, DerefMut},
+};
 
-pub mod abs;
+use evaluate_divisions::Solution;
 
-// use std::cmp::Ordering;
-// use std::fmt::Debug;
-// use std::marker::Copy;
-// use std::ops::Mul;
+mod evaluate_divisions;
+mod graph;
 
-// trait Dimension: Mul<Output = Self> + Copy + PartialEq + PartialOrd + Debug {}
-// impl<T: Mul<Output = T> + Copy + PartialEq + PartialOrd + Debug> Dimension for T {}
+fn add<'a: 'b, 'b>(set: &mut HashSet<&'b str>, value: &'a str) {
+    set.insert(value);
+}
 
-// #[derive(Debug, Clone, Copy)]
-// struct Rectangle<T: Dimension> {
-//     width: T,
-//     height: T,
-// }
-
-// impl<T: Dimension> Rectangle<T> {
-//     fn square(dimension: T) -> Self {
-//         Rectangle {
-//             width: dimension,
-//             height: dimension,
-//         }
-//     }
-
-//     fn area(&self) -> T {
-//         self.width * self.height
-//     }
-
-//     fn mix_up(rect1: &mut Self, rect2: &mut Self) {
-//         let height = rect1.height;
-//         rect1.height = rect2.height;
-//         rect2.height = height;
-//     }
-
-//     fn bigger<'a>(rect1: &'a Self, rect2: &'a Self) -> &'a Self {
-//         if rect1.area() > rect2.area() {
-//             rect1
-//         } else {
-//             rect2
-//         }
-//     }
-
-//     fn switcheroo(&mut self, other: &mut Self) {
-//         Self::mix_up(self, other);
-//         Self::mix_up(self, other);
-//     }
-// }
-
-// impl<T: Dimension> PartialEq for Rectangle<T> {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.width.eq(&other.width) && self.height.eq(&other.height)
-//     }
-// }
-
-// impl<T: Dimension> PartialOrd for Rectangle<T> {
-//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-//         if self.eq(&other) {
-//             Some(Ordering::Equal)
-//         } else if self.width > other.width && self.height > other.height {
-//             Some(Ordering::Greater)
-//         } else if self.width < other.width && self.height < other.height {
-//             Some(Ordering::Less)
-//         } else {
-//             None
-//         }
-//     }
-// }
+fn inc<T: DerefMut<Target = i32>>(mut input: T) {
+    *input += 1;
+}
 
 fn main() {
-    let equations = vec![
-        vec!["x1".to_string(), "x2".to_string()],
-        vec!["x2".to_string(), "x3".to_string()],
-        vec!["x3".to_string(), "x4".to_string()],
-        vec!["x4".to_string(), "x5".to_string()],
-    ];
-    let values = vec![3.0, 4.0, 5.0, 6.0];
-    let queries = vec![
-        vec!["x1".to_string(), "x5".to_string()],
-        vec!["x5".to_string(), "x2".to_string()],
-        vec!["x2".to_string(), "x4".to_string()],
-        vec!["x2".to_string(), "x2".to_string()],
-        vec!["x2".to_string(), "x9".to_string()],
-        vec!["x9".to_string(), "x9".to_string()],
-    ];
-    let results = Solution::calc_equation(equations, values, queries);
-    println!("{:?}", results);
+    let mut i = 10;
+    inc(&mut i);
+    println!("{}", i);
+
+    // let equations = vec![
+    //     vec!["x1".to_string(), "x2".to_string()],
+    //     vec!["x2".to_string(), "x3".to_string()],
+    //     vec!["x3".to_string(), "x4".to_string()],
+    //     vec!["x4".to_string(), "x5".to_string()],
+    // ];
+    // let values = vec![3.0, 4.0, 5.0, 6.0];
+    // let queries = vec![
+    //     vec!["x1".to_string(), "x5".to_string()],
+    //     vec!["x5".to_string(), "x2".to_string()],
+    //     vec!["x2".to_string(), "x4".to_string()],
+    //     vec!["x2".to_string(), "x2".to_string()],
+    //     vec!["x2".to_string(), "x9".to_string()],
+    //     vec!["x9".to_string(), "x9".to_string()],
+    // ];
+    // let results = Solution::calc_equation(equations, values, queries);
+    // println!("{:?}", results);
+
+    // let mut map = HashMap::new();
+    // let key = "Shit";
+    // map.insert("Shit", 4);
+    // let entry = map.entry(key);
+    // println!("{}", key);
+    // println!("{:?}", entry);
+    // map.insert("Fuck", 4);
 }
