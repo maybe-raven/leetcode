@@ -13,6 +13,15 @@ macro_rules! return_if_some {
     }};
 }
 
+#[macro_export]
+macro_rules! return_value_if_some {
+    ( $e:expr ) => {{
+        if let Some(return_value_if_some_result) = $e {
+            return return_value_if_some_result;
+        }
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     // use super::*;
