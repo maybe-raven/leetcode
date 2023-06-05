@@ -5,4 +5,5 @@ pub mod integer_to_english;
 pub mod integer_to_roman;
 pub mod shortest_path_binary_matrix;
 pub mod stone_game_ii;
+pub mod top_k_frequent;
 mod utils;
