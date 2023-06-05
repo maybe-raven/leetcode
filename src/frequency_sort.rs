@@ -5,22 +5,19 @@ use std::{collections::HashMap, iter::repeat};
 
 impl Solution {
     pub fn frequency_sort(s: String) -> String {
-        let mut map: HashMap<u8, usize> = HashMap::new();
-        let byte_vec = s.into_bytes();
+        let mut map: HashMap<char, usize> = HashMap::new();
 
-        for byte in byte_vec {
-            map.entry(byte).and_modify(|x| *x += 1).or_insert(1);
-        }
+        s.chars().for_each(|ch| {
+            map.entry(ch).and_modify(|x| *x += 1).or_insert(1);
+        });
 
-        let mut byte_vec: Vec<(u8, usize)> = map.into_iter().collect();
-        byte_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1));
+        let mut char_vec: Vec<(char, usize)> = map.into_iter().collect();
+        char_vec.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
-        let byte_vec: Vec<u8> = byte_vec
+        char_vec
             .into_iter()
             .flat_map(|(k, count)| repeat(k).take(count))
-            .collect();
-
-        String::from_utf8(byte_vec).expect("Need to ensure the function produces valid Strings.")
+            .collect::<String>()
     }
 }
 
