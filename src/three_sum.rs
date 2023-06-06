@@ -41,39 +41,53 @@ impl From<Triplet> for Vec<i32> {
     }
 }
 
+impl Triplet {
+    fn count(&self, value: i32) -> usize {
+        let mut result = 0;
+
+        if self.0 == value {
+            result += 1;
+        }
+
+        if self.1 == value {
+            result += 1;
+        }
+
+        if self.2 == value {
+            result += 1;
+        }
+
+        result
+    }
+}
+
 impl Solution {
     pub fn three_sum(nums: Vec<i32>) -> Vec<Vec<i32>> {
         let memo = {
-            let mut memo: HashMap<i32, Vec<usize>> = HashMap::new();
+            let mut memo: HashMap<i32, usize> = HashMap::new();
 
-            for (index, &num) in nums.iter().enumerate() {
-                memo.entry(num)
-                    .and_modify(|v| v.push(index))
-                    .or_insert_with(|| vec![index]);
+            for num in nums {
+                memo.entry(num).and_modify(|v| *v += 1).or_insert(1);
             }
 
             memo
         };
 
-        println!("{:?}", memo);
-
         let mut result: HashSet<Triplet> = HashSet::new();
-        for (index0, &num0) in nums.iter().enumerate() {
-            for (index1, &num1) in nums.iter().enumerate() {
-                if index0 == index1 {
-                    continue;
-                }
+        for (&num0, &count0) in memo.iter() {
+            for (&num1, &count1) in memo.iter() {
+                let num2 = -num0 - num1;
+                if let Some(&count2) = memo.get(&num2) {
+                    let triplet = Triplet::new(num0, num1, num2);
 
-                // num0 + num1 + num2 = 0 is the requirement
-                // so search for a num2 = -num0 - num1
-                if let Some(indices) = memo.get(&(-num0 - num1)) {
-                    for &index2 in indices {
-                        if index2 == index0 || index2 == index1 {
-                            continue;
-                        }
-
-                        result.insert(Triplet::new(num0, num1, nums[index2]));
+                    if count0 < triplet.count(num0)
+                        || count1 < triplet.count(num1)
+                        || count2 < triplet.count(num2)
+                    {
+                        continue;
                     }
+
+                    result.insert(triplet);
                 }
             }
         }
@@ -100,7 +114,6 @@ mod tests {
                 -6139, -52495, -98856, -17703, 4267, -47010, -94633, -44825, -8252, 1757, 77027,
                 -87822, 11051, 10341, 55353, 22098, 41130, 77985, -69890, 1872, 13436,
             ]);
-            println!("{:?}", result);
             result.contains(&vec![-17703, 4267, 13436]) && result.contains(&vec![-6139, 1872, 4267])
         });
         assert!(Solution::three_sum(vec![0, 1, 1]).is_empty());
