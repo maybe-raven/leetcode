@@ -19,7 +19,7 @@
 // and 2n - 2i - 3 spaces between characters within a chunk.
 
 impl Solution {
-    pub fn convert(s: String, num_rows: i32) -> String {
+    pub fn convert(mut s: String, num_rows: i32) -> String {
         let num_rows = num_rows as usize;
         let max_i = num_rows - 1;
         let chunk_len = num_rows * 2 - 2;
@@ -28,28 +28,28 @@ impl Solution {
             return s;
         }
 
-        let mut result = String::with_capacity(s.capacity());
-        let s: Vec<char> = s.chars().collect();
+        let chars: Vec<char> = s.chars().collect();
+        s.clear();
 
-        let n_chunks = f64::ceil((s.len() as f64) / (chunk_len as f64)) as usize;
+        let n_chunks = f64::ceil((chars.len() as f64) / (chunk_len as f64)) as usize;
 
         for i in 0..num_rows {
             for j in 0..n_chunks {
-                if let Some(&ch) = s.get(chunk_len * j + i) {
-                    result.push(ch);
+                if let Some(&ch) = chars.get(chunk_len * j + i) {
+                    s.push(ch);
                 }
 
                 if i == 0 || i == max_i {
                     continue;
                 }
 
-                if let Some(&ch) = s.get(chunk_len * (j + 1) - i) {
-                    result.push(ch);
+                if let Some(&ch) = chars.get(chunk_len * (j + 1) - i) {
+                    s.push(ch);
                 }
             }
         }
 
-        result
+        s
     }
 }
 
