@@ -67,54 +67,8 @@ impl Solution {
             a_range_end
         };
 
-        let sums_memo = {
-            let mut memo: HashMap<i32, Vec<(i32, i32)>> = HashMap::new();
-
-            let min_sum = target - (nums[a_range_end - 1] + last);
-            let max_sum = target - (nums[d_range_start] + first);
-
-            for &b in nums.iter() {
-                for &c in nums.iter().rev() {
-                    if b > c {
-                        break;
-                    }
-
-                    let sum = b + c;
-
-                    if sum < min_sum {
-                        break;
-                    }
-
-                    if sum > max_sum {
-                        continue;
-                    }
-
-                    if b == c && counter[&b] < 2 {
-                        continue;
-                    }
-
-                    let pair = if b < c { (b, c) } else { (c, b) };
-
-                    memo.entry(sum)
-                        .and_modify(|v| v.push(pair))
-                        .or_insert_with(|| vec![pair]);
-                }
-            }
-
-            memo
-        };
-
-        // println!("{:?}", sums_memo);
-
-        // let neg_end = nums.partition_point(|&x| x < 0);
-        // let pos_start = if nums[neg_end] == 0 {
-        //     neg_end + 1
-        // } else {
-        //     neg_end
-        // };
-
-        for &a in &nums[..a_range_end] {
-            for &d in &nums[d_range_start..] {
+        for (ia, &a) in nums[..a_range_end].iter().enumerate() {
+            for (id, &d) in nums[d_range_start..].iter().enumerate() {
                 if target.is_positive() && d > target && a >= 0 {
                     break;
                 }
@@ -123,15 +77,25 @@ impl Solution {
                     continue;
                 }
 
-                if let Some(pairs) = sums_memo.get(&(target - (a + d))) {
-                    for &(b, c) in pairs {
-                        if b < a || c > d {
-                            continue;
-                        }
+                let diff = target - a - d;
 
-                        if a == b && a == c && counter[&a] < 3 {
+                for &b in &nums[ia..(id + d_range_start + 1)] {
+                    let c = diff - b;
+
+                    if c < b {
+                        break;
+                    }
+
+                    if c > d {
+                        continue;
+                    }
+
+                    if let Some(&c_count) = counter.get(&c) {
+                        // println!("count: {}", c_count);
+
+                        if ((a == b && a == c) || (b == d && c == d)) && c_count < 3 {
                             continue;
-                        } else if b == d && c == d && counter[&d] < 3 {
+                        } else if b == c && c_count < 2 {
                             continue;
                         }
 
