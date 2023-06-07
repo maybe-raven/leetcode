@@ -1,22 +1,28 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use leetrust::zigzag_conversion::Solution;
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
-use std::iter::repeat_with;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use leetrust::four_sum::Solution;
 
 fn benchmark_fun(c: &mut Criterion) {
-    let mut rng = thread_rng();
-    let input: String = repeat_with(|| rng.sample(Alphanumeric) as char)
-        .take(1000)
-        .collect();
-
-    let mut group = c.benchmark_group("zigzag_conversion");
-    for k in [1, 5, 10, 20, 40, 80, 160, 320, 640, 1000].iter() {
-        group.throughput(Throughput::Bytes(*k as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(k), k, |b, &size| {
-            b.iter(|| Solution::convert(black_box(input.clone()), size));
-        });
-    }
-    group.finish();
+    let nums = vec![
+        1400, -8643, 4050, -3477, 5868, 9957, -8561, 4509, 1560, -4157, 873, -9105, -7407, -9508,
+        -3249, -4480, -6040, 7226, 593, 6152, -6077, -7577, -3188, -9745, -5083, -4608, -9302,
+        -9415, -9468, -5493, 9092, -8416, 5939, 2305, 4699, 1395, 2082, -5109, -5608, 5271, -1661,
+        -8895, 1617, 9682, 2297, 7267, 1676, -9244, -7694, -2993, -2976, 1443, 6271, 200, -696,
+        4463, 9968, -4861, 6291, -6490, 9336, 9263, 6989, 1890, -4348, 7970, 6739, 5227, -9778,
+        -5794, -2491, -8922, 6999, -5940, -7507, 672, -7559, 5544, -5641, 7450, 2665, -5411, 1315,
+        9745, 368, 9301, -5517, -7121, -1503, -222, 2610, 4819, 795, 5283, 7082, -2509, 2049, 3728,
+        7039, 2431, 1553, 5642, -9068, -7471, 5328, 1774, -7872, 2981, 1854, -4946, 3174, 7280,
+        9193, 8335, 6163, 8129, 8358, 8394, -6204, -8401, 4210, 9870, -2774, -4560, -9967, -962,
+        -7279, 4147, -3013, 3488, -1689, -1437, -2617, -7555, 9477, 1555, 264, -3325, -7358, -7561,
+        -9054, -6969, -6137, 5040, 6516, -7899, -4402, -6262, 6484, -5678, 4583, 946, 3276, 3813,
+        1937, -4758, -1783, 7052, 6811, 9978, -7295, 3206, -7914, 9018, 5384, -8155, 5103, -557,
+        3705, 6018, 5382, -2181, -3416, 5543, -7344, -2465, 6646, -8934, -16, -1533, -612071,
+        -622894, -610287, -620491, -620491, -620595, -611767, -607043, -619492, -629511, -601270,
+        -632104, -629843, -626595, -625328,
+    ];
+    let target = -620706;
+    c.bench_function("four_sum", |b| {
+        b.iter(|| Solution::four_sum(black_box(nums.clone()), black_box(target)))
+    });
 }
 
 criterion_group!(benches, benchmark_fun);
