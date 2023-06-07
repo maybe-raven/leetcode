@@ -5,7 +5,7 @@
 // let a <= b <= c <= d and a + b + c + d == target
 // if a < q then d > q and vice versa
 // therefore a <= q <= d is always true
-// practically speaking, we check a == b == c == d == q outside of a loop,
+// practically speaking, we check a == b == c == d == q before the loop,
 // so we only check a and d where a < q < d
 
 // if target > 0 and d > target then a < 0
@@ -80,7 +80,11 @@ impl Solution {
                 let diff = target - a - d;
 
                 for &b in &nums[ia..(id + d_range_start + 1)] {
-                    let c = diff - b;
+                    let c = diff.checked_sub(b);
+                    if c.is_none() {
+                        continue;
+                    }
+                    let c = c.expect("Continue if None.");
 
                     if c < b {
                         break;
@@ -91,8 +95,6 @@ impl Solution {
                     }
 
                     if let Some(&c_count) = counter.get(&c) {
-                        // println!("count: {}", c_count);
-
                         if ((a == b && a == c) || (b == d && c == d)) && c_count < 3 {
                             continue;
                         } else if b == c && c_count < 2 {
@@ -217,6 +219,21 @@ mod tests {
             let mut results = slow_four_sum(nums.clone(), target);
             sort_and_assert_results(target, &mut results);
             do_test_and_assert(nums, target, results.len());
+        }
+    }
+
+    #[test]
+    fn test_overflow() {
+        let mut rng = thread_rng();
+        let dist = Uniform::new(-1000000000, 1000000000);
+        let target_dist = Uniform::new(-1000000000, 1000000000);
+
+        for _ in 0..50 {
+            let target = rng.sample(target_dist);
+            let nums: Vec<i32> = repeat_with(|| rng.sample(dist)).take(200).collect();
+
+            let mut results = Solution::four_sum(nums.clone(), target);
+            sort_and_assert_results(target, &mut results);
         }
     }
 }
