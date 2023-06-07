@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 
+const EMPTY_INPUT_ERR: &'static str = "Input cannot be empty.";
 impl Solution {
     pub fn three_sum(mut nums: Vec<i32>) -> Vec<Vec<i32>> {
         let counter = {
@@ -36,27 +37,20 @@ impl Solution {
         // 0 can only appear once or thrice in a triplet.
         // [0, 0, n] where n != 0 is never valid.
         // Here we check the possibility of [0, 0, 0] specifically.
-        let pos_start = if nums[neg_end] == 0 {
-            if counter[&0] >= 3 {
+        if let Some(&count) = counter.get(&0) {
+            if count >= 3 {
                 results.push(vec![0, 0, 0]);
             }
+        }
 
-            neg_end + 1
-        } else {
-            neg_end
-        };
-
-        // `neg_end == 0` means the input is all non-negative numbers,
-        // you can't sum to 0 with only positive numbers,
-        // so the only way to sum to 0 would be [0, 0, 0],
-        // which we've already checked.
-        if neg_end == 0 {
+        // Shortcircuit for input that is all non-negative or all non-positive.
+        if *nums.first().expect(EMPTY_INPUT_ERR) >= 0 || *nums.last().expect(EMPTY_INPUT_ERR) <= 0 {
             return results;
         }
 
         // We can be sure that `(neg_num, pos_num)` is unique every iteration,
         // because `nums` only contain unique values,
-        // and there is no overlap between range `..neg_end` and `pos_start..`.
+        // and `neg_num < 0 < pos_num`.
 
         // However, `(neg_num, pos_num, offset_num)` is not guaranteed to be unique.
         // Consider a, b, c where `a < 0 < b < c`, and `a + b + c == 0`,
@@ -69,19 +63,27 @@ impl Solution {
         // To prevent duplicates from occuring this way,
         // we can choose to discard any iterations where `offset_num == c`,
         // that is to say, we require `neg_num <= offset_num <= pos_num`.
-        for &neg_num in &nums[..neg_end] {
-            for &pos_num in &nums[pos_start..] {
-                let offset_num = -(neg_num + pos_num);
+        for &neg_num in nums.iter() {
+            if neg_num >= 0 {
+                break;
+            }
 
-                // `offset_num < neg_num` == `-neg_num - pos_num < neg_num` == `2 * abs(neg_num) < pos_num`
-                // and since `pos_num` only goes up at every iteration of the inner loop,
-                // once `2 * abs(neg_num) < pos_num` becomes true,
-                // it will continue to be true until the next outer iteration.
-                if offset_num < neg_num {
+            for &pos_num in nums.iter().rev() {
+                if pos_num <= 0 {
                     break;
                 }
 
+                let offset_num = -(neg_num + pos_num);
+
+                // `pos_num < offset_num` == `pos_num < -neg_num - pos_num` == `2 * pos_num < abs(neg_num)`
+                // and since `pos_num` only goes down at every iteration of the inner loop,
+                // once `2 * pos_num < abs(neg_num)` becomes true,
+                // it will continue to be true until the next outer iteration.
                 if offset_num > pos_num {
+                    break;
+                }
+
+                if offset_num < neg_num {
                     continue;
                 }
 
