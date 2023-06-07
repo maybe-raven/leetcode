@@ -47,21 +47,24 @@ impl Solution {
         let &first = nums.first().expect(EMPTY_INPUT_ERR);
         let &last = nums.last().expect(EMPTY_INPUT_ERR);
 
-        let quarter = target / 4;
         let mut results = Vec::new();
+        let quarter = (target as f64) / 4.0;
 
-        if let Some(&count) = counter.get(&quarter) {
-            if count >= 4 {
-                results.push(vec![quarter, quarter, quarter, quarter]);
+        if quarter == quarter.trunc() {
+            let quarter = quarter as i32;
+            if let Some(&count) = counter.get(&quarter) {
+                if count >= 4 {
+                    results.push(vec![quarter, quarter, quarter, quarter]);
+                }
             }
         }
 
-        if first >= quarter || last <= quarter {
+        if (first as f64) >= quarter || (last as f64) <= quarter {
             return results;
         }
 
-        let a_range_end = nums.partition_point(|&x| x < quarter);
-        let d_range_start = if nums[a_range_end] == quarter {
+        let a_range_end = nums.partition_point(|&x| (x as f64) < quarter);
+        let d_range_start = if (nums[a_range_end] as f64) == quarter {
             a_range_end + 1
         } else {
             a_range_end
@@ -178,13 +181,14 @@ mod tests {
     }
 
     #[test]
-    fn test_three_sum() {
+    fn test_four_sum() {
         do_test_and_assert(vec![1, 0, -1, 0, -2, 2], 0, 3);
         do_test_and_assert(vec![2, 2, 2, 2, 2], 8, 1);
         do_test_and_assert(vec![2, 3, 4, 5, 6, 7], 8, 0);
         do_test_and_assert(vec![-1, 0, 1, 2, 3, 4], -8, 0);
         do_test_and_assert(vec![-100, -50, -25, 25, 50, 100], -10, 0);
         do_test_and_assert(vec![1, 2, 3, 4, 21, 22, 23, 24, 25], 20, 0);
+        do_test_and_assert(vec![0, 0, 0, 0], 1, 0);
         do_test_and_assert(vec![1, 1, 1], 8, 0);
         do_test_and_assert(vec![], 8, 0);
         do_test_and_assert(
@@ -203,17 +207,17 @@ mod tests {
     #[test]
     fn test_against_slow() {
         let mut rng = thread_rng();
-        let dist = Uniform::new(-10000, 10000);
-        let target_dist = Uniform::new(-1000000, 1000000);
+        let dist = Uniform::new(-1000, 1000);
+        let target_dist = Uniform::new(-1000, 1000);
         let guaranteed_results_dist = Uniform::new(0, 10);
 
-        for _ in 0..10 {
+        for _ in 0..1000 {
             let target = rng.sample(target_dist);
             let mut nums: Vec<i32> = repeat_with(|| rng.sample(dist)).take(100).collect();
 
             for _ in 0..rng.sample(guaranteed_results_dist) {
                 let i = rng.sample(Uniform::new(2, nums.len()));
-                nums.push(target - (nums[i - 1] + nums[i - 2] + nums[i - 3]))
+                nums.push(target - (nums[i] + nums[i - 1] + nums[i - 2]))
             }
 
             let mut results = slow_four_sum(nums.clone(), target);
@@ -228,7 +232,7 @@ mod tests {
         let dist = Uniform::new(-1000000000, 1000000000);
         let target_dist = Uniform::new(-1000000000, 1000000000);
 
-        for _ in 0..50 {
+        for _ in 0..100 {
             let target = rng.sample(target_dist);
             let nums: Vec<i32> = repeat_with(|| rng.sample(dist)).take(200).collect();
 
