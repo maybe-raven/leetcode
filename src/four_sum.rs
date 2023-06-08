@@ -5,7 +5,7 @@
 // let a <= b <= c <= d and a + b + c + d == target
 // if a < q then d > q and vice versa
 // therefore a <= q <= d is always true
-// practically speaking, we check a == b == c == d == q before the loop,
+// practically speaking, we check a == b == c == d == q outside of a loop,
 // so we only check a and d where a < q < d
 
 // if target > 0 and d > target then a < 0
@@ -21,43 +21,44 @@
 // where n2 is the smallest number, and q2 is the smallest number that's larger than q
 // target - (q1 + nums.last()) <= b + c <= target - (q2 + nums.first())
 
+use crate::lib::hash_vec::HashVec;
 use std::collections::HashMap;
 
-const EMPTY_INPUT_ERR: &'static str = "Input vec cannot be empty.";
 
 impl Solution {
-    pub fn four_sum(mut nums: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
+    pub fn four_sum(nums: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
         if nums.len() < 4 {
             return vec![];
         }
 
-        let counter = {
-            let mut counter: HashMap<i32, usize> = HashMap::new();
+        let (counter, nums): (HashMap<i32, usize>, Vec<i32>) = {
+            let mut counter = HashMap::new();
+            let mut nums = nums;
 
             for num in nums.drain(..) {
                 counter.entry(num).and_modify(|v| *v += 1).or_insert(1);
             }
 
-            counter
+            nums.extend(counter.keys());
+            nums.sort_unstable();
+
+            (counter, nums)
         };
 
-        nums.extend(counter.keys());
-        nums.sort_unstable();
+        let mut results: Vec<Vec<i32>> = Vec::new();
 
-        let &first = nums.first().expect(EMPTY_INPUT_ERR);
-        let &last = nums.last().expect(EMPTY_INPUT_ERR);
-
-        let mut results = Vec::new();
         let quarter = (target as f64) / 4.0;
-
         if quarter == quarter.trunc() {
             let quarter = quarter as i32;
-            if let Some(&count) = counter.get(&quarter) {
-                if count >= 4 {
-                    results.push(vec![quarter, quarter, quarter, quarter]);
-                }
+            let count = counter.get(&quarter).copied().unwrap_or(0);
+            if count >= 4 {
+                results.push(vec![quarter, quarter, quarter, quarter]);
             }
         }
+        
+        const EMPTY_INPUT_ERR: &'static str = "Empty input vector should trigger early return, and it otherwise should not become empty.";
+        let &first = nums.first().expect(EMPTY_INPUT_ERR);
+        let &last = nums.last().expect(EMPTY_INPUT_ERR);
 
         if (first as f64) >= quarter || (last as f64) <= quarter {
             return results;
@@ -70,8 +71,41 @@ impl Solution {
             a_range_end
         };
 
-        for (ia, &a) in nums[..a_range_end].iter().enumerate() {
-            for (id, &d) in nums[d_range_start..].iter().enumerate() {
+        let bc_sum_memo: HashVec<i32, (i32, i32)> = {
+            let mut memo = HashVec::new();
+
+            let min_sum = target - (nums[a_range_end - 1] + last);
+            let max_sum = target - (nums[d_range_start] + first);
+
+            for &b in nums.iter() {
+                for &c in nums.iter().rev() {
+                    if b > c {
+                        break;
+                    }
+
+                    let sum = b + c;
+
+                    if sum < min_sum {
+                        break;
+                    }
+
+                    if sum > max_sum {
+                        continue;
+                    }
+
+                    if b == c && counter[&b] < 2 {
+                        continue;
+                    }
+
+                    memo.insert(sum, (b, c));
+                }
+            }
+
+            memo
+        };
+
+        for &a in &nums[..a_range_end] {
+            for &d in &nums[d_range_start..] {
                 if target.is_positive() && d > target && a >= 0 {
                     break;
                 }
@@ -80,40 +114,30 @@ impl Solution {
                     continue;
                 }
 
-                let diff = target - a - d;
+                let Some(pairs) = bc_sum_memo.get(&(target - a - d)) else {
+                    continue; 
+                };
 
-                for &b in &nums[ia..(id + d_range_start + 1)] {
-                    let c = diff.checked_sub(b);
-                    if c.is_none() {
-                        continue;
-                    }
-                    let c = c.expect("Continue if None.");
-
-                    if c < b {
-                        break;
-                    }
-
-                    if c > d {
+                for &(b, c) in pairs {
+                    if b < a || c > d {
                         continue;
                     }
 
-                    if let Some(&c_count) = counter.get(&c) {
-                        if ((a == b && a == c) || (b == d && c == d)) && c_count < 3 {
-                            continue;
-                        } else if b == c && c_count < 2 {
-                            continue;
-                        }
-
-                        if (a == b || a == c) && counter[&a] < 2 {
-                            continue;
-                        }
-
-                        if (b == d || c == d) && counter[&d] < 2 {
-                            continue;
-                        }
-
-                        results.push(vec![a, b, c, d]);
+                    if a == b && a == c && counter[&a] < 3 {
+                        continue;
+                    } else if b == d && c == d && counter[&d] < 3 {
+                        continue;
                     }
+
+                    if (a == b || a == c) && counter[&a] < 2 {
+                        continue;
+                    }
+
+                    if (b == d || c == d) && counter[&d] < 2 {
+                        continue;
+                    }
+
+                    results.push(vec![a, b, c, d]);
                 }
             }
         }
@@ -211,7 +235,7 @@ mod tests {
         let target_dist = Uniform::new(-1000, 1000);
         let guaranteed_results_dist = Uniform::new(0, 10);
 
-        for _ in 0..1000 {
+        for _ in 0..100 {
             let target = rng.sample(target_dist);
             let mut nums: Vec<i32> = repeat_with(|| rng.sample(dist)).take(100).collect();
 

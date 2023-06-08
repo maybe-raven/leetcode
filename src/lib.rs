@@ -14,3 +14,7 @@ pub mod top_k_frequent;
 pub mod two_sum;
 mod utils;
 pub mod zigzag_conversion;
+
+mod lib {
+    pub mod hash_vec;
+}
