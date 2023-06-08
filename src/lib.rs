@@ -6,6 +6,7 @@ pub mod h_index;
 pub mod integer_to_english;
 pub mod integer_to_roman;
 pub mod shortest_path_binary_matrix;
+pub mod sort_colors;
 pub mod stone_game_ii;
 pub mod three_sum;
 pub mod top_k_frequent;
