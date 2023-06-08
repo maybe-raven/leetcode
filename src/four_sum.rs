@@ -11,6 +11,9 @@
 // if target > 0 and d > target then a < 0
 // if target < 0 and a < target then d > 0
 
+// let sums_memo[sum] = [(b1, c1), (b2, c2), ...]
+// such that for all pairs of b and c: b + c == sum
+
 // b + c == target - (a + d)
 // since a < q, a + d <= q1 + n1
 // where n1 is the largest number, and q1 is the largest number that's smaller than q
