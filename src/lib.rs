@@ -8,6 +8,7 @@ pub mod integer_to_english;
 pub mod integer_to_roman;
 pub mod max_value;
 pub mod shortest_path_binary_matrix;
+pub mod snapshot_array;
 pub mod sort_colors;
 pub mod stone_game_ii;
 pub mod three_sum;
