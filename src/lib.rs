@@ -11,6 +11,7 @@ pub mod shortest_path_binary_matrix;
 pub mod snapshot_array;
 pub mod sort_colors;
 pub mod stone_game_ii;
+pub mod summary_ranges;
 pub mod three_sum;
 pub mod top_k_frequent;
 pub mod two_sum;
