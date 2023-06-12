@@ -10,5 +10,5 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "my_benchmark"
+name = "iter_vs_loop"
 harness = false
