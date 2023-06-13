@@ -191,12 +191,14 @@ impl Board {
     fn solve(&mut self) -> bool {
         let Some(coord) = self.find_first_empty() else { return self.is_solved(); };
 
-        let result = self.get_possible_values(coord).into_iter().find(|&value| {
-            self[coord] = value;
-            self.solve()
-        });
+        let result = self
+            .get_possible_values(coord)
+            .any(|value| {
+                self[coord] = value;
+                self.solve()
+            });
 
-        if result.is_some() {
+        if result {
             true
         } else {
             self[coord] = Tile::EMPTY_VALUE;
