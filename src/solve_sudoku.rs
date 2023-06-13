@@ -1,4 +1,7 @@
-use std::ops::{Index, IndexMut};
+use std::{
+    convert::TryFrom,
+    ops::{Index, IndexMut},
+};
 
 use rand::{seq::SliceRandom, Rng};
 
@@ -153,7 +156,7 @@ impl Board {
         connected
     }
 
-    fn get_possible_values(&self, coordinate: Coordinate) -> impl Iterator<Item = Tile> {
+    fn get_possible_values(&self, coordinate: Coordinate) -> [Tile; 9] {
         let mut existing_values: Vec<Tile> = self
             .get_connected(coordinate)
             .into_iter()
@@ -163,10 +166,13 @@ impl Board {
         existing_values.sort_unstable();
         existing_values.dedup();
 
-        Tile::ALL_VALUES
-            .clone()
-            .into_iter()
-            .filter(move |x| !existing_values.contains(x))
+        let mut values = Tile::ALL_VALUES;
+        for x in values.iter_mut() {
+            if existing_values.contains(x) {
+                *x = Tile::EMPTY_VALUE;
+            }
+        }
+        values
     }
 
     fn is_solved(&self) -> bool {
@@ -193,6 +199,8 @@ impl Board {
 
         let result = self
             .get_possible_values(coord)
+            .into_iter()
+            .filter(|x| !x.is_empty())
             .any(|value| {
                 self[coord] = value;
                 self.solve()
