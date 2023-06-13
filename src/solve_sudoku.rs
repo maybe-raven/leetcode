@@ -1,7 +1,4 @@
-use std::{
-    collections::BTreeSet,
-    ops::{Index, IndexMut},
-};
+use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Coordinate {
@@ -167,11 +164,14 @@ impl Board {
     }
 
     pub fn get_possible_values(&self, index: Coordinate) -> impl Iterator<Item = Cell> {
-        let existing_values: BTreeSet<Cell> = self
+        let mut existing_values: Vec<Cell> = self
             .get_connected(index)
             .into_iter()
             .filter(|&c| !c.is_empty())
             .collect();
+
+        existing_values.sort_unstable();
+        existing_values.dedup();
 
         Cell::ALL_VALUES
             .clone()
