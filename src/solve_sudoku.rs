@@ -142,36 +142,31 @@ impl Board {
         ]
     }
 
-    fn get_connected(&self, coordinate: Coordinate) -> [Tile; 25] {
-        let mut connected = [Tile::default(); 25];
-        connected[..9].copy_from_slice(&self.0[coordinate.row]);
-        connected.swap(coordinate.column, 8);
-
-        let mut column = self.get_column(coordinate.column);
-        column.swap(coordinate.row, 8);
-        connected[8..17].copy_from_slice(&column);
-
-        connected[16..].copy_from_slice(&self.get_block(coordinate.to_block_start()));
-
-        connected
-    }
-
-    fn get_possible_values(&self, coordinate: Coordinate) -> [Tile; 9] {
-        let mut existing_values: Vec<Tile> = self
-            .get_connected(coordinate)
-            .into_iter()
-            .filter(|&x| !x.is_empty())
-            .collect();
-
-        existing_values.sort_unstable();
-        existing_values.dedup();
-
+    fn get_possible_values(&self, coord: Coordinate) -> [Tile; 9] {
         let mut values = Tile::ALL_VALUES;
-        for x in values.iter_mut() {
-            if existing_values.contains(x) {
-                *x = Tile::EMPTY_VALUE;
-            }
-        }
+
+        let mut clear_value = |tile: Tile| {
+            let Some(i) = char::to_digit(tile.0 as char, 10) else { return; };
+            values[(i - 1) as usize] = Tile::EMPTY_VALUE;
+        };
+
+        self.0[coord.row].iter().copied().for_each(&mut clear_value);
+        self.0
+            .iter()
+            .map(|row| row[coord.column])
+            .for_each(&mut clear_value);
+
+        let Coordinate {
+            row: block_row,
+            column: block_column,
+        } = coord.to_block_start();
+
+        self.0[block_row..block_row + 3]
+            .into_iter()
+            .flat_map(|row| row[block_column..block_column + 3].into_iter())
+            .copied()
+            .for_each(clear_value);
+
         values
     }
 
