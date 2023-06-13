@@ -4,13 +4,13 @@ use std::{
 };
 
 #[derive(Debug, Clone, Copy)]
-struct Coordinate {
+pub struct Coordinate {
     row: usize,
     column: usize,
 }
 
 impl Coordinate {
-    fn new(row: usize, column: usize) -> Coordinate {
+    pub fn new(row: usize, column: usize) -> Coordinate {
         Self { row, column }
     }
 
@@ -34,19 +34,85 @@ impl Coordinate {
     ];
 }
 
-type Cell = char;
-const ALL_VALUES: [Cell; 9] = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-struct Board<'a>(&'a mut Vec<Vec<Cell>>);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub struct Cell(u8);
 
-impl<'a> Board<'a> {
-    fn new(board: &'a mut Vec<Vec<Cell>>) -> Self {
-        Self(board)
+impl Cell {
+    const EMPTY_VALUE: Cell = Cell(b'.');
+    const ALL_VALUES: [Cell; 9] = [
+        Cell(b'1'),
+        Cell(b'2'),
+        Cell(b'3'),
+        Cell(b'4'),
+        Cell(b'5'),
+        Cell(b'6'),
+        Cell(b'7'),
+        Cell(b'8'),
+        Cell(b'9'),
+    ];
+
+    fn is_empty(self) -> bool {
+        self == Self::EMPTY_VALUE
     }
+}
+
+impl From<char> for Cell {
+    fn from(value: char) -> Self {
+        Self(value as u8)
+    }
+}
+
+impl From<Cell> for char {
+    fn from(value: Cell) -> Self {
+        value.0 as char
+    }
+}
+
+pub struct Board([[Cell; 9]; 9]);
+
+// impl From<&Vec<Vec<char>>> for Board {
+//     fn from(value: &Vec<Vec<char>>) -> Self {
+//         Self(
+//             value
+//                 .into_iter()
+//                 .map(|row| row.into_iter().map(|&cell| cell.into()).collect())
+//                 .collect(),
+//         )
+//     }
+// }
+
+impl TryFrom<&Vec<Vec<char>>> for Board {
+    type Error = ();
+
+    fn try_from(char_board: &Vec<Vec<char>>) -> Result<Self, Self::Error> {
+        if char_board.len() < 9 {
+            return Err(());
+        }
+
+        let mut arr_board = [[Cell::default(); 9]; 9];
+        for (arr_row, char_row) in arr_board.iter_mut().zip(char_board) {
+            if char_row.len() < 9 {
+                return Err(());
+            }
+
+            for (arr_cell, &char_cell) in arr_row.iter_mut().zip(char_row) {
+                *arr_cell = Cell::from(char_cell);
+            }
+        }
+
+        Ok(Self(arr_board))
+    }
+}
+
+impl Board {
+    // pub fn new(board: Vec<Vec<Cell>>) -> Self {
+    //     Self(board)
+    // }
 
     fn find_first_empty(&mut self) -> Option<Coordinate> {
         for (y, row) in self.0.iter().enumerate() {
             for (x, &cell) in row.iter().enumerate() {
-                if cell == '.' {
+                if cell.is_empty() {
                     return Some(Coordinate::new(y, x));
                 }
             }
@@ -87,7 +153,7 @@ impl<'a> Board<'a> {
     }
 
     fn get_connected(&self, coordinate: Coordinate) -> [Cell; 25] {
-        let mut connected = [char::default(); 25];
+        let mut connected = [Cell::default(); 25];
         connected[..9].copy_from_slice(&self.0[coordinate.row]);
         connected.swap(coordinate.column, 8);
 
@@ -100,22 +166,22 @@ impl<'a> Board<'a> {
         connected
     }
 
-    fn get_possible_values(&self, index: Coordinate) -> impl Iterator<Item = Cell> {
+    pub fn get_possible_values(&self, index: Coordinate) -> impl Iterator<Item = Cell> {
         let existing_values: BTreeSet<Cell> = self
             .get_connected(index)
             .into_iter()
-            .filter(|&c| c != '.')
+            .filter(|&c| !c.is_empty())
             .collect();
 
-        ALL_VALUES
+        Cell::ALL_VALUES
             .clone()
             .into_iter()
             .filter(move |x| !existing_values.contains(x))
     }
 
-    pub fn is_solved(&self) -> bool {
+    fn is_solved(&self) -> bool {
         fn check_segment(segment: &[Cell]) -> bool {
-            ALL_VALUES
+            Cell::ALL_VALUES
                 .iter()
                 .all(|value| segment.into_iter().any(|cell| cell.eq(value)))
         }
@@ -134,7 +200,7 @@ impl<'a> Board<'a> {
             .all(|block| check_segment(&block))
     }
 
-    fn solve(&mut self) -> bool {
+    pub fn solve(&mut self) -> bool {
         let Some(coord) = self.find_first_empty() else { return self.is_solved(); };
 
         let result = self.get_possible_values(coord).into_iter().find(|&value| {
@@ -145,13 +211,21 @@ impl<'a> Board<'a> {
         if result.is_some() {
             true
         } else {
-            self[coord] = '.';
+            self[coord] = Cell::EMPTY_VALUE;
             false
+        }
+    }
+
+    pub fn sync(&self, out: &mut Vec<Vec<char>>) {
+        for (out_row, row) in out.iter_mut().zip(self.0.iter()) {
+            for (out_cell, &cell) in out_row.iter_mut().zip(row.into_iter()) {
+                *out_cell = cell.into();
+            }
         }
     }
 }
 
-impl Index<Coordinate> for Board<'_> {
+impl Index<Coordinate> for Board {
     type Output = Cell;
 
     fn index(&self, index: Coordinate) -> &Self::Output {
@@ -159,16 +233,17 @@ impl Index<Coordinate> for Board<'_> {
     }
 }
 
-impl IndexMut<Coordinate> for Board<'_> {
+impl IndexMut<Coordinate> for Board {
     fn index_mut(&mut self, index: Coordinate) -> &mut Self::Output {
         self.0.index_mut(index.row).index_mut(index.column)
     }
 }
 
 impl Solution {
-    pub fn solve_sudoku(board: &mut Vec<Vec<char>>) {
-        let mut board = Board::new(board);
+    pub fn solve_sudoku(og_board: &mut Vec<Vec<char>>) {
+        let mut board = Board::try_from(&*og_board).unwrap();
         board.solve();
+        board.sync(og_board);
     }
 }
 
