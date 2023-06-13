@@ -9,6 +9,7 @@ pub mod integer_to_roman;
 pub mod max_value;
 pub mod shortest_path_binary_matrix;
 pub mod snapshot_array;
+pub mod solve_sudoku;
 pub mod sort_colors;
 pub mod stone_game_ii;
 pub mod summary_ranges;
