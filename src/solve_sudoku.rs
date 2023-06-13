@@ -1,13 +1,15 @@
 use std::ops::{Index, IndexMut};
 
+use rand::{seq::SliceRandom, Rng};
+
 #[derive(Debug, Clone, Copy)]
-pub struct Coordinate {
+struct Coordinate {
     row: usize,
     column: usize,
 }
 
 impl Coordinate {
-    pub fn new(row: usize, column: usize) -> Coordinate {
+    fn new(row: usize, column: usize) -> Coordinate {
         Self { row, column }
     }
 
@@ -18,7 +20,7 @@ impl Coordinate {
         }
     }
 
-    pub const BLOCK_INDICES: [Self; 9] = [
+    const BLOCK_INDICES: [Self; 9] = [
         Coordinate { row: 0, column: 0 },
         Coordinate { row: 0, column: 3 },
         Coordinate { row: 0, column: 6 },
@@ -32,20 +34,20 @@ impl Coordinate {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-pub struct Cell(u8);
+struct Tile(u8);
 
-impl Cell {
-    const EMPTY_VALUE: Cell = Cell(b'.');
-    const ALL_VALUES: [Cell; 9] = [
-        Cell(b'1'),
-        Cell(b'2'),
-        Cell(b'3'),
-        Cell(b'4'),
-        Cell(b'5'),
-        Cell(b'6'),
-        Cell(b'7'),
-        Cell(b'8'),
-        Cell(b'9'),
+impl Tile {
+    const EMPTY_VALUE: Tile = Tile(b'.');
+    const ALL_VALUES: [Tile; 9] = [
+        Tile(b'1'),
+        Tile(b'2'),
+        Tile(b'3'),
+        Tile(b'4'),
+        Tile(b'5'),
+        Tile(b'6'),
+        Tile(b'7'),
+        Tile(b'8'),
+        Tile(b'9'),
     ];
 
     fn is_empty(self) -> bool {
@@ -53,30 +55,19 @@ impl Cell {
     }
 }
 
-impl From<char> for Cell {
+impl From<char> for Tile {
     fn from(value: char) -> Self {
         Self(value as u8)
     }
 }
 
-impl From<Cell> for char {
-    fn from(value: Cell) -> Self {
+impl From<Tile> for char {
+    fn from(value: Tile) -> Self {
         value.0 as char
     }
 }
 
-pub struct Board([[Cell; 9]; 9]);
-
-// impl From<&Vec<Vec<char>>> for Board {
-//     fn from(value: &Vec<Vec<char>>) -> Self {
-//         Self(
-//             value
-//                 .into_iter()
-//                 .map(|row| row.into_iter().map(|&cell| cell.into()).collect())
-//                 .collect(),
-//         )
-//     }
-// }
+struct Board([[Tile; 9]; 9]);
 
 impl TryFrom<&Vec<Vec<char>>> for Board {
     type Error = ();
@@ -86,14 +77,14 @@ impl TryFrom<&Vec<Vec<char>>> for Board {
             return Err(());
         }
 
-        let mut arr_board = [[Cell::default(); 9]; 9];
+        let mut arr_board = [[Tile::default(); 9]; 9];
         for (arr_row, char_row) in arr_board.iter_mut().zip(char_board) {
             if char_row.len() < 9 {
                 return Err(());
             }
 
-            for (arr_cell, &char_cell) in arr_row.iter_mut().zip(char_row) {
-                *arr_cell = Cell::from(char_cell);
+            for (arr_tile, &char_tile) in arr_row.iter_mut().zip(char_row) {
+                *arr_tile = Tile::from(char_tile);
             }
         }
 
@@ -102,14 +93,13 @@ impl TryFrom<&Vec<Vec<char>>> for Board {
 }
 
 impl Board {
-    // pub fn new(board: Vec<Vec<Cell>>) -> Self {
-    //     Self(board)
-    // }
-
+    fn new() -> Self {
+        Self([[Tile::EMPTY_VALUE; 9]; 9])
+    }
     fn find_first_empty(&mut self) -> Option<Coordinate> {
         for (y, row) in self.0.iter().enumerate() {
-            for (x, &cell) in row.iter().enumerate() {
-                if cell.is_empty() {
+            for (x, &tile) in row.iter().enumerate() {
+                if tile.is_empty() {
                     return Some(Coordinate::new(y, x));
                 }
             }
@@ -117,7 +107,7 @@ impl Board {
         None
     }
 
-    fn get_column(&self, column: usize) -> [Cell; 9] {
+    fn get_column(&self, column: usize) -> [Tile; 9] {
         [
             self.0[0][column],
             self.0[1][column],
@@ -131,26 +121,26 @@ impl Board {
         ]
     }
 
-    fn get_columns(&self) -> impl Iterator<Item = [Cell; 9]> + '_ {
+    fn get_columns(&self) -> impl Iterator<Item = [Tile; 9]> + '_ {
         (0..9).map(|column| self.get_column(column))
     }
 
-    fn get_block(&self, coord: Coordinate) -> [Cell; 9] {
+    fn get_block(&self, Coordinate { row, column }: Coordinate) -> [Tile; 9] {
         [
-            self.0[coord.row][coord.column],
-            self.0[coord.row][coord.column + 1],
-            self.0[coord.row][coord.column + 2],
-            self.0[coord.row + 1][coord.column],
-            self.0[coord.row + 1][coord.column + 1],
-            self.0[coord.row + 1][coord.column + 2],
-            self.0[coord.row + 2][coord.column],
-            self.0[coord.row + 2][coord.column + 1],
-            self.0[coord.row + 2][coord.column + 2],
+            self.0[row][column],
+            self.0[row][column + 1],
+            self.0[row][column + 2],
+            self.0[row + 1][column],
+            self.0[row + 1][column + 1],
+            self.0[row + 1][column + 2],
+            self.0[row + 2][column],
+            self.0[row + 2][column + 1],
+            self.0[row + 2][column + 2],
         ]
     }
 
-    fn get_connected(&self, coordinate: Coordinate) -> [Cell; 25] {
-        let mut connected = [Cell::default(); 25];
+    fn get_connected(&self, coordinate: Coordinate) -> [Tile; 25] {
+        let mut connected = [Tile::default(); 25];
         connected[..9].copy_from_slice(&self.0[coordinate.row]);
         connected.swap(coordinate.column, 8);
 
@@ -163,44 +153,42 @@ impl Board {
         connected
     }
 
-    pub fn get_possible_values(&self, index: Coordinate) -> impl Iterator<Item = Cell> {
-        let mut existing_values: Vec<Cell> = self
-            .get_connected(index)
+    fn get_possible_values(&self, coordinate: Coordinate) -> impl Iterator<Item = Tile> {
+        let mut existing_values: Vec<Tile> = self
+            .get_connected(coordinate)
             .into_iter()
-            .filter(|&c| !c.is_empty())
+            .filter(|&x| !x.is_empty())
             .collect();
 
         existing_values.sort_unstable();
         existing_values.dedup();
 
-        Cell::ALL_VALUES
+        Tile::ALL_VALUES
             .clone()
             .into_iter()
             .filter(move |x| !existing_values.contains(x))
     }
 
     fn is_solved(&self) -> bool {
-        fn check_segment(segment: &[Cell]) -> bool {
-            Cell::ALL_VALUES
-                .iter()
-                .all(|value| segment.into_iter().any(|cell| cell.eq(value)))
+        fn check_group(group: &[Tile; 9]) -> bool {
+            Tile::ALL_VALUES.iter().all(|v| group.contains(v))
         }
 
-        if !self.0.iter().all(|row| check_segment(row.as_slice())) {
+        if !self.0.iter().all(check_group) {
             return false;
         }
 
-        if !self.get_columns().all(|col| check_segment(&col)) {
+        if !self.get_columns().all(|col| check_group(&col)) {
             return false;
         }
 
         Coordinate::BLOCK_INDICES
             .iter()
             .map(|&coord| self.get_block(coord))
-            .all(|block| check_segment(&block))
+            .all(|block| check_group(&block))
     }
 
-    pub fn solve(&mut self) -> bool {
+    fn solve(&mut self) -> bool {
         let Some(coord) = self.find_first_empty() else { return self.is_solved(); };
 
         let result = self.get_possible_values(coord).into_iter().find(|&value| {
@@ -211,22 +199,22 @@ impl Board {
         if result.is_some() {
             true
         } else {
-            self[coord] = Cell::EMPTY_VALUE;
+            self[coord] = Tile::EMPTY_VALUE;
             false
         }
     }
 
-    pub fn sync(&self, out: &mut Vec<Vec<char>>) {
+    fn sync(&self, out: &mut Vec<Vec<char>>) {
         for (out_row, row) in out.iter_mut().zip(self.0.iter()) {
-            for (out_cell, &cell) in out_row.iter_mut().zip(row.into_iter()) {
-                *out_cell = cell.into();
+            for (out_tile, &tile) in out_row.iter_mut().zip(row.into_iter()) {
+                *out_tile = tile.into();
             }
         }
     }
 }
 
 impl Index<Coordinate> for Board {
-    type Output = Cell;
+    type Output = Tile;
 
     fn index(&self, index: Coordinate) -> &Self::Output {
         self.0.index(index.row).index(index.column)
@@ -248,6 +236,42 @@ impl Solution {
 }
 
 pub struct Solution;
+
+pub struct SudokuMaker<R> {
+    rng: R,
+}
+
+impl<R: Rng> SudokuMaker<R> {
+    pub fn new(rng: R) -> Self {
+        Self { rng }
+    }
+
+    pub fn make_sudoku_puzzle(&mut self, n: usize) -> Vec<Vec<char>> {
+        let all_coordinates: Vec<Coordinate> = (0..9)
+            .flat_map(|x| (0..9).map(move |y| Coordinate::new(y, x)))
+            .collect();
+        let mut board = Board::new();
+
+        for (i, &coord) in all_coordinates
+            .choose_multiple(&mut self.rng, 9)
+            .enumerate()
+        {
+            board[coord] = (i + 1).to_string().chars().next().unwrap().into();
+        }
+
+        board.solve();
+
+        for &coord in all_coordinates.choose_multiple(&mut self.rng, 81 - n) {
+            board[coord] = Tile::EMPTY_VALUE;
+        }
+
+        board
+            .0
+            .into_iter()
+            .map(|row| row.into_iter().map(|x| char::from(x)).collect())
+            .collect()
+    }
+}
 
 #[cfg(test)]
 mod tests {
