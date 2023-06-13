@@ -120,57 +120,43 @@ impl Board {
         None
     }
 
-    fn get_column(&self, column: usize) -> [Cell; 9] {
-        [
-            self.0[0][column],
-            self.0[1][column],
-            self.0[2][column],
-            self.0[3][column],
-            self.0[4][column],
-            self.0[5][column],
-            self.0[6][column],
-            self.0[7][column],
-            self.0[8][column],
-        ]
+    fn get_column(&self, column: usize) -> impl Iterator<Item = Cell> + Clone + '_ {
+        self.0.iter().map(move |row| row[column])
     }
 
-    fn get_columns(&self) -> impl Iterator<Item = [Cell; 9]> + '_ {
+    fn get_columns(&self) -> impl Iterator<Item = impl Iterator<Item = Cell> + Clone + '_> {
         (0..9).map(|column| self.get_column(column))
     }
 
-    fn get_block(&self, coord: Coordinate) -> [Cell; 9] {
-        [
-            self.0[coord.row][coord.column],
-            self.0[coord.row][coord.column + 1],
-            self.0[coord.row][coord.column + 2],
-            self.0[coord.row + 1][coord.column],
-            self.0[coord.row + 1][coord.column + 1],
-            self.0[coord.row + 1][coord.column + 2],
-            self.0[coord.row + 2][coord.column],
-            self.0[coord.row + 2][coord.column + 1],
-            self.0[coord.row + 2][coord.column + 2],
-        ]
+    fn get_block(
+        &self,
+        Coordinate { row, column }: Coordinate,
+    ) -> impl Iterator<Item = Cell> + Clone + '_ {
+        self.0[row..row + 3]
+            .iter()
+            .flat_map(move |row| &row[column..column + 3])
+            .copied()
     }
 
-    fn get_connected(&self, coordinate: Coordinate) -> [Cell; 25] {
-        let mut connected = [Cell::default(); 25];
-        connected[..9].copy_from_slice(&self.0[coordinate.row]);
-        connected.swap(coordinate.column, 8);
-
-        let mut column = self.get_column(coordinate.column);
-        column.swap(coordinate.row, 8);
-        connected[8..17].copy_from_slice(&column);
-
-        connected[16..].copy_from_slice(&self.get_block(coordinate.to_block_start()));
-
-        connected
+    fn get_connected(&self, coordinate: Coordinate) -> impl Iterator<Item = Cell> + '_ {
+        let Coordinate { row, column } = coordinate;
+        self.0[row]
+            .iter()
+            .copied()
+            .enumerate()
+            .filter_map(move |(i, v)| if i == column { None } else { Some(v) })
+            .chain(
+                self.get_column(coordinate.column)
+                    .enumerate()
+                    .filter_map(move |(i, v)| if i == row { None } else { Some(v) }),
+            )
+            .chain(self.get_block(coordinate.to_block_start()))
     }
 
     pub fn get_possible_values(&self, index: Coordinate) -> impl Iterator<Item = Cell> {
         let existing_values: BTreeSet<Cell> = self
             .get_connected(index)
-            .into_iter()
-            .filter(|&c| !c.is_empty())
+            .filter(|&v| !v.is_empty())
             .collect();
 
         Cell::ALL_VALUES
@@ -180,24 +166,24 @@ impl Board {
     }
 
     fn is_solved(&self) -> bool {
-        fn check_segment(segment: &[Cell]) -> bool {
+        fn check_segment<I: Iterator<Item = Cell> + Clone>(mut segment: I) -> bool {
             Cell::ALL_VALUES
                 .iter()
-                .all(|value| segment.into_iter().any(|cell| cell.eq(value)))
+                .all(|value| segment.clone().any(|cell| cell.eq(value)))
         }
 
-        if !self.0.iter().all(|row| check_segment(row.as_slice())) {
+        if !self.0.iter().all(|row| check_segment(row.iter().copied())) {
             return false;
         }
 
-        if !self.get_columns().all(|col| check_segment(&col)) {
+        if !self.get_columns().all(check_segment) {
             return false;
         }
 
         Coordinate::BLOCK_INDICES
             .iter()
             .map(|&coord| self.get_block(coord))
-            .all(|block| check_segment(&block))
+            .all(|block| check_segment(block))
     }
 
     pub fn solve(&mut self) -> bool {
@@ -252,6 +238,113 @@ pub struct Solution;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_check_segment() {
+        fn check_segment<I: Iterator<Item = Cell>>(mut segment: I) -> bool {
+            Cell::ALL_VALUES
+                .iter()
+                .all(move |value| segment.any(|cell| cell.eq(value)))
+        }
+
+        assert!(check_segment(
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+                .into_iter()
+                .map(|x| Cell::from(x))
+        ));
+    }
+
+    #[test]
+    fn test_is_solved() {
+        assert!(Board::try_from(&vec![
+            vec!['5', '3', '4', '6', '7', '8', '9', '1', '2'],
+            vec!['6', '7', '2', '1', '9', '5', '3', '4', '8'],
+            vec!['1', '9', '8', '3', '4', '2', '5', '6', '7'],
+            vec!['8', '5', '9', '7', '6', '1', '4', '2', '3'],
+            vec!['4', '2', '6', '8', '5', '3', '7', '9', '1'],
+            vec!['7', '1', '3', '9', '2', '4', '8', '5', '6'],
+            vec!['9', '6', '1', '5', '3', '7', '2', '8', '4'],
+            vec!['2', '8', '7', '4', '1', '9', '6', '3', '5'],
+            vec!['3', '4', '5', '2', '8', '6', '1', '7', '9'],
+        ])
+        .unwrap()
+        .is_solved());
+
+        assert!(Board::try_from(&vec![
+            vec!['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            vec!['4', '5', '6', '7', '8', '9', '1', '2', '3'],
+            vec!['7', '8', '9', '1', '2', '3', '4', '5', '6'],
+            vec!['2', '6', '4', '3', '1', '8', '5', '9', '7'],
+            vec!['3', '7', '8', '6', '9', '5', '2', '1', '4'],
+            vec!['9', '1', '5', '2', '7', '4', '3', '6', '8'],
+            vec!['5', '4', '2', '8', '6', '7', '9', '3', '1'],
+            vec!['6', '3', '1', '9', '4', '2', '8', '7', '5'],
+            vec!['8', '9', '7', '5', '3', '1', '6', '4', '2']
+        ])
+        .unwrap()
+        .is_solved());
+
+        assert!(!Board::try_from(&vec![
+            vec!['5', '3', '.', '.', '7', '.', '.', '.', '.'],
+            vec!['6', '.', '.', '1', '9', '5', '.', '.', '.'],
+            vec!['.', '9', '8', '.', '.', '.', '.', '6', '.'],
+            vec!['8', '.', '.', '.', '6', '.', '.', '.', '3'],
+            vec!['4', '.', '.', '8', '.', '3', '.', '.', '1'],
+            vec!['7', '.', '.', '.', '2', '.', '.', '.', '6'],
+            vec!['.', '6', '.', '.', '.', '.', '2', '8', '.'],
+            vec!['.', '.', '.', '4', '1', '9', '.', '.', '5'],
+            vec!['.', '.', '.', '.', '8', '.', '.', '7', '9'],
+        ])
+        .unwrap()
+        .is_solved());
+
+        assert!(!Board::try_from(&vec![
+            vec!['1', '.', '.', '4', '.', '.', '.', '.', '.'],
+            vec!['.', '5', '.', '.', '8', '.', '.', '.', '.'],
+            vec!['.', '.', '9', '1', '2', '.', '.', '.', '6'],
+            vec!['.', '6', '.', '.', '.', '.', '.', '.', '7'],
+            vec!['.', '.', '8', '.', '.', '.', '2', '.', '.'],
+            vec!['.', '.', '5', '.', '.', '4', '.', '.', '.'],
+            vec!['.', '.', '.', '8', '.', '.', '.', '.', '.'],
+            vec!['6', '.', '1', '.', '4', '2', '.', '.', '.'],
+            vec!['.', '.', '7', '.', '.', '.', '.', '.', '.'],
+        ])
+        .unwrap()
+        .is_solved());
+    }
+
+    #[test]
+    fn test_solve() {
+        let mut board = Board::try_from(&vec![
+            vec!['5', '3', '.', '.', '7', '.', '.', '.', '.'],
+            vec!['6', '.', '.', '1', '9', '5', '.', '.', '.'],
+            vec!['.', '9', '8', '.', '.', '.', '.', '6', '.'],
+            vec!['8', '.', '.', '.', '6', '.', '.', '.', '3'],
+            vec!['4', '.', '.', '8', '.', '3', '.', '.', '1'],
+            vec!['7', '.', '.', '.', '2', '.', '.', '.', '6'],
+            vec!['.', '6', '.', '.', '.', '.', '2', '8', '.'],
+            vec!['.', '.', '.', '4', '1', '9', '.', '.', '5'],
+            vec!['.', '.', '.', '.', '8', '.', '.', '7', '9'],
+        ])
+        .unwrap();
+        board.solve();
+        assert!(board.is_solved());
+
+        let mut board = Board::try_from(&vec![
+            vec!['1', '.', '.', '4', '.', '.', '.', '.', '.'],
+            vec!['.', '5', '.', '.', '8', '.', '.', '.', '.'],
+            vec!['.', '.', '9', '1', '2', '.', '.', '.', '6'],
+            vec!['.', '6', '.', '.', '.', '.', '.', '.', '7'],
+            vec!['.', '.', '8', '.', '.', '.', '2', '.', '.'],
+            vec!['.', '.', '5', '.', '.', '4', '.', '.', '.'],
+            vec!['.', '.', '.', '8', '.', '.', '.', '.', '.'],
+            vec!['6', '.', '1', '.', '4', '2', '.', '.', '.'],
+            vec!['.', '.', '7', '.', '.', '.', '.', '.', '.'],
+        ])
+        .unwrap();
+        board.solve();
+        assert!(board.is_solved());
+    }
 
     #[test]
     fn test_solution() {
