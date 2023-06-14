@@ -12,5 +12,5 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "sudoku_bench"
+name = "equal_pairs_bench"
 harness = false

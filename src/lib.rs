@@ -1,5 +1,6 @@
 pub mod check_straight_line;
 pub mod count_negatives;
+pub mod equal_pairs;
 pub mod evaluate_divisions;
 pub mod four_sum;
 pub mod frequency_sort;
