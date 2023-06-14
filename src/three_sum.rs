@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-const EMPTY_INPUT_ERR: &'static str = "Input cannot be empty.";
+const EMPTY_INPUT_ERR: &str = "Input cannot be empty.";
 impl Solution {
     pub fn three_sum(mut nums: Vec<i32>) -> Vec<Vec<i32>> {
         let counter = {

@@ -9,7 +9,7 @@
 // move down by one, move left till the first non-negative number,
 // repeat
 
-const EMPTY_INPUT_ERR: &'static str = "Input must not be empty";
+const EMPTY_INPUT_ERR: &str = "Input must not be empty";
 
 impl Solution {
     pub fn count_negatives(grid: Vec<Vec<i32>>) -> i32 {

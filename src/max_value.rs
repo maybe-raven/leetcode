@@ -53,10 +53,10 @@ impl Solution {
                 + max(0, n - i - a)
                 + a;
 
-            if sum == max_sum {
-                return a;
-            } else if sum > max_sum {
-                return a - 1;
+            match sum.cmp(&max_sum) {
+                std::cmp::Ordering::Less => (),
+                std::cmp::Ordering::Equal => return a,
+                std::cmp::Ordering::Greater => return a - 1,
             }
         }
 

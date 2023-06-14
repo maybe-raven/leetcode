@@ -6,7 +6,7 @@ use crate::return_if_some;
 
 fn get_value(
     graph: &HashMap<&str, HashMap<&str, f64>>,
-    division_expression: &Vec<String>,
+    division_expression: &[String],
 ) -> Option<f64> {
     let top_variable = division_expression[0].as_str();
     let bottom_variable = division_expression[1].as_str();
@@ -68,8 +68,10 @@ impl Solution {
                 .insert(top_variable, 1.0 / value);
         }
 
-        let f = |query| get_value(&graph, query).unwrap_or(-1.0);
-        queries.iter().map(f).collect()
+        queries
+            .iter()
+            .map(|query| get_value(&graph, query).unwrap_or(-1.0))
+            .collect()
     }
 }
 

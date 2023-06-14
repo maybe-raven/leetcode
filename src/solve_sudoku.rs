@@ -16,7 +16,7 @@ impl Coordinate {
         Self { row, column }
     }
 
-    fn to_block_start(&self) -> Coordinate {
+    fn to_block_start(self) -> Coordinate {
         Self {
             row: self.row - self.row % 3,
             column: self.column - self.column % 3,
@@ -162,8 +162,8 @@ impl Board {
         } = coord.to_block_start();
 
         self.0[block_row..block_row + 3]
-            .into_iter()
-            .flat_map(|row| row[block_column..block_column + 3].into_iter())
+            .iter()
+            .flat_map(|row| row[block_column..block_column + 3].iter())
             .copied()
             .for_each(clear_value);
 
@@ -209,9 +209,9 @@ impl Board {
         }
     }
 
-    fn sync(&self, out: &mut Vec<Vec<char>>) {
+    fn sync(&self, out: &mut [Vec<char>]) {
         for (out_row, row) in out.iter_mut().zip(self.0.iter()) {
-            for (out_tile, &tile) in out_row.iter_mut().zip(row.into_iter()) {
+            for (out_tile, &tile) in out_row.iter_mut().zip(row.iter()) {
                 *out_tile = tile.into();
             }
         }
@@ -273,7 +273,7 @@ impl<R: Rng> SudokuMaker<R> {
         board
             .0
             .into_iter()
-            .map(|row| row.into_iter().map(|x| char::from(x)).collect())
+            .map(|row| row.into_iter().map(char::from).collect())
             .collect()
     }
 }

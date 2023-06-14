@@ -67,7 +67,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         let Some(ref mut iter) = self.iter else {return None; };
 
-        while let Some(x) = iter.next() {
+        for x in iter.by_ref() {
             if self.last == x - 1 {
                 self.last = x;
                 continue;

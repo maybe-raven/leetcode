@@ -24,7 +24,6 @@
 use crate::lib::hash_vec::HashVec;
 use std::collections::HashMap;
 
-
 impl Solution {
     pub fn four_sum(nums: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
         if nums.len() < 4 {
@@ -55,8 +54,8 @@ impl Solution {
                 results.push(vec![quarter, quarter, quarter, quarter]);
             }
         }
-        
-        const EMPTY_INPUT_ERR: &'static str = "Empty input vector should trigger early return, and it otherwise should not become empty.";
+
+        const EMPTY_INPUT_ERR: &str = "Empty input vector should trigger early return, and it otherwise should not become empty.";
         let &first = nums.first().expect(EMPTY_INPUT_ERR);
         let &last = nums.last().expect(EMPTY_INPUT_ERR);
 
@@ -115,7 +114,7 @@ impl Solution {
                 }
 
                 let Some(pairs) = bc_sum_memo.get(&(target - a - d)) else {
-                    continue; 
+                    continue;
                 };
 
                 for &(b, c) in pairs {
@@ -123,9 +122,9 @@ impl Solution {
                         continue;
                     }
 
-                    if a == b && a == c && counter[&a] < 3 {
-                        continue;
-                    } else if b == d && c == d && counter[&d] < 3 {
+                    if (a == b && a == c && counter[&a] < 3)
+                        || (b == d && c == d && counter[&d] < 3)
+                    {
                         continue;
                     }
 

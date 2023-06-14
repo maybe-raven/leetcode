@@ -14,7 +14,7 @@ struct Line {
 }
 
 impl Coordinate {
-    fn new(input: &Vec<i32>) -> Self {
+    fn new(input: &[i32]) -> Self {
         Self {
             x: *input.first().expect("Input must be in the form of [x, y]") as f64,
             y: *input.last().expect("Input must be in the form of [x, y]") as f64,
@@ -57,7 +57,7 @@ impl Solution {
         );
 
         coordinates[2..]
-            .into_iter()
+            .iter()
             .all(|coordinate| line.contains(Coordinate::new(coordinate)))
     }
 }
