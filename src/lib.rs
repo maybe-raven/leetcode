@@ -7,6 +7,7 @@ pub mod frequency_sort;
 pub mod h_index;
 pub mod integer_to_english;
 pub mod integer_to_roman;
+pub mod max_level_sum;
 pub mod max_value;
 pub mod minimum_difference_bst;
 pub mod shortest_path_binary_matrix;
