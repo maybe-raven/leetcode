@@ -8,6 +8,7 @@ pub mod h_index;
 pub mod integer_to_english;
 pub mod integer_to_roman;
 pub mod max_value;
+pub mod minimum_difference_bst;
 pub mod shortest_path_binary_matrix;
 pub mod snapshot_array;
 pub mod solve_sudoku;
