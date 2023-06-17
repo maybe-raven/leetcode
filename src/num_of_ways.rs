@@ -18,24 +18,9 @@
 use std::ops::{Index, IndexMut};
 
 const MAX: usize = 1000000007;
-const MAX_N: usize = 1000;
+const MAX_N: usize = 997;
 
-const TABLE: [[usize; MAX_N]; MAX_N] = {
-    let mut table = [[1; MAX_N]; MAX_N];
-
-    let mut i = 1;
-    while i < MAX_N {
-        let mut j = 1;
-        while j < i {
-            table[i][j] = (table[i - 1][j] + table[i][j - 1]) % MAX;
-            j += 1;
-        }
-        table[i][i] = (table[i][i - 1] + table[i][i - 1]) % MAX;
-        i += 1;
-    }
-
-    table
-};
+static mut RUNTIME_TABLE: [[Option<usize>; MAX_N]; MAX_N] = [[None; MAX_N]; MAX_N];
 
 trait MulMod {
     fn mul_mod(self, other: Self) -> Self;
@@ -79,6 +64,7 @@ impl<T: Default + Clone> ResizingGetMut<T> for Vec<T> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 struct TableIndex(usize, usize);
 
 impl TableIndex {
@@ -129,9 +115,26 @@ fn calc_permutations(nums: &[i32]) -> usize {
 }
 
 fn calc_spliced_permutations(a: usize, b: usize) -> usize {
-    let index = TableIndex::new(a, b);
+    if a == 0 || b == 0 {
+        return 1;
+    } else if a == 1 {
+        return b + 1;
+    } else if b == 1 {
+        return a + 1;
+    }
+
+    let index = TableIndex::new(a - 2, b - 2);
     if index.is_valid() {
-        TABLE[index]
+        if let Some(cached) = unsafe { RUNTIME_TABLE[index] } {
+            cached
+        } else {
+            let result =
+                calc_spliced_permutations(a - 1, b).add_mod(calc_spliced_permutations(a, b - 1));
+            unsafe {
+                RUNTIME_TABLE[index] = Some(result);
+            }
+            result
+        }
     } else {
         calc_spliced_permutations(a - 1, b).add_mod(calc_spliced_permutations(a, b - 1))
     }
