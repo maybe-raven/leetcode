@@ -15,7 +15,9 @@
 // keep x being the first number that is greater than `head`, and
 // y being first number that is less than `head`.
 
-fn calc_permutations(nums: &[i32]) -> usize {
+use std::u128;
+
+fn calc_permutations(nums: &[i32]) -> u128 {
     let Some((head, tail)) = nums.split_first() else { return 1; };
     if tail.len() <= 1 {
         return 1;
@@ -36,7 +38,7 @@ fn calc_permutations(nums: &[i32]) -> usize {
     calc_permutations(&a) * calc_permutations(&b) * calc_spliced_permutations(a.len(), b.len())
 }
 
-fn calc_spliced_permutations(a: usize, b: usize) -> usize {
+fn calc_spliced_permutations(a: usize, b: usize) -> u128 {
     if a == 0 || b == 0 {
         1
     } else {
