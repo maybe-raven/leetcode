@@ -15,8 +15,6 @@
 // keep x being the first number that is greater than `head`, and
 // y being first number that is less than `head`.
 
-use std::collections::HashMap;
-
 const MAX: usize = 1000000007;
 
 trait MulMod {
@@ -39,13 +37,63 @@ impl AddMod for usize {
     }
 }
 
-fn calc_permutations(nums: &[i32], memo: &mut HashMap<(usize, usize), usize>) -> usize {
+trait ResizingGetMut<T> {
+    fn resizing_get_mut(&mut self, index: usize) -> &mut T;
+}
+
+impl<T: Default + Clone> ResizingGetMut<T> for Vec<T> {
+    fn resizing_get_mut(&mut self, index: usize) -> &mut T {
+        match self.len().cmp(&index) {
+            std::cmp::Ordering::Less => {
+                self.resize(index + 1, T::default());
+                self.last_mut()
+                    .expect("We just resized the vector to be longer than 1.")
+            }
+            std::cmp::Ordering::Equal => {
+                self.push(T::default());
+                self.last_mut()
+                    .expect("We just pushed an element into the vector.")
+            }
+            std::cmp::Ordering::Greater => &mut self[index],
+        }
+    }
+}
+
+struct TableIndex(usize, usize);
+
+impl TableIndex {
+    fn new(a: usize, b: usize) -> Self {
+        if a < b {
+            Self(b, a)
+        } else {
+            Self(a, b)
+        }
+    }
+}
+
+struct Table<T>(Vec<Vec<Option<T>>>);
+
+impl<T: Default + Clone> Table<T> {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn get(&mut self, index: &TableIndex) -> &Option<T> {
+        self.0.resizing_get_mut(index.0).resizing_get_mut(index.1)
+    }
+
+    fn insert(&mut self, index: &TableIndex, value: T) {
+        *self.0.resizing_get_mut(index.0).resizing_get_mut(index.1) = Some(value)
+    }
+}
+
+fn calc_permutations(nums: &[i32], memo: &mut Table<usize>) -> usize {
     let Some((head, tail)) = nums.split_first() else { return 1; };
     if tail.len() <= 1 {
         return 1;
     }
 
-    let (a, b): (Vec<i32>, Vec<i32>) = tail.into_iter().partition(|&x| match head.cmp(x) {
+    let (a, b): (Vec<i32>, Vec<i32>) = tail.iter().partition(|&x| match head.cmp(x) {
         std::cmp::Ordering::Less => false,
         std::cmp::Ordering::Equal => {
             unreachable!("We are asserting that the input contains only unique elements.")
@@ -58,26 +106,21 @@ fn calc_permutations(nums: &[i32], memo: &mut HashMap<(usize, usize), usize>) ->
         .mul_mod(calc_spliced_permutations(a.len(), b.len(), memo))
 }
 
-fn calc_spliced_permutations(
-    a: usize,
-    b: usize,
-    memo: &mut HashMap<(usize, usize), usize>,
-) -> usize {
+fn calc_spliced_permutations(a: usize, b: usize, memo: &mut Table<usize>) -> usize {
     if a == 0 || b == 0 {
         1
     } else if a == 1 {
-        (b + 1) as usize
+        b + 1
     } else if b == 1 {
-        (a + 1) as usize
+        a + 1
     } else {
-        let key = if a > b { (b, a) } else { (a, b) };
-
-        if let Some(&cached) = memo.get(&key) {
+        let index = TableIndex::new(a, b);
+        if let &Some(cached) = memo.get(&index) {
             cached
         } else {
             let value = calc_spliced_permutations(a - 1, b, memo)
                 .add_mod(calc_spliced_permutations(a, b - 1, memo));
-            memo.insert(key, value);
+            memo.insert(&index, value);
             value
         }
     }
@@ -85,7 +128,7 @@ fn calc_spliced_permutations(
 
 impl Solution {
     pub fn num_of_ways(nums: Vec<i32>) -> i32 {
-        let mut memo = HashMap::new();
+        let mut memo = Table::new();
         ((calc_permutations(&nums, &mut memo) - 1) % MAX) as i32
     }
 }
