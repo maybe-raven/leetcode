@@ -15,7 +15,27 @@
 // keep x being the first number that is greater than `head`, and
 // y being first number that is less than `head`.
 
+use std::ops::{Index, IndexMut};
+
 const MAX: usize = 1000000007;
+const MAX_N: usize = 1000;
+
+const TABLE: [[usize; MAX_N]; MAX_N] = {
+    let mut table = [[1; MAX_N]; MAX_N];
+
+    let mut i = 1;
+    while i < MAX_N {
+        let mut j = 1;
+        while j < i {
+            table[i][j] = (table[i - 1][j] + table[i][j - 1]) % MAX;
+            j += 1;
+        }
+        table[i][i] = (table[i][i - 1] + table[i][i - 1]) % MAX;
+        i += 1;
+    }
+
+    table
+};
 
 trait MulMod {
     fn mul_mod(self, other: Self) -> Self;
@@ -69,25 +89,27 @@ impl TableIndex {
             Self(a, b)
         }
     }
-}
 
-struct Table<T>(Vec<Vec<Option<T>>>);
-
-impl<T: Default + Clone> Table<T> {
-    fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    fn get(&mut self, index: &TableIndex) -> &Option<T> {
-        self.0.resizing_get_mut(index.0).resizing_get_mut(index.1)
-    }
-
-    fn insert(&mut self, index: &TableIndex, value: T) {
-        *self.0.resizing_get_mut(index.0).resizing_get_mut(index.1) = Some(value)
+    fn is_valid(&self) -> bool {
+        self.0 < MAX_N
     }
 }
 
-fn calc_permutations(nums: &[i32], memo: &mut Table<usize>) -> usize {
+impl<T, const N: usize> Index<TableIndex> for [[T; N]] {
+    type Output = T;
+
+    fn index(&self, index: TableIndex) -> &Self::Output {
+        self.index(index.0).index(index.1)
+    }
+}
+
+impl<T, const N: usize> IndexMut<TableIndex> for [[T; N]] {
+    fn index_mut(&mut self, index: TableIndex) -> &mut Self::Output {
+        self.index_mut(index.0).index_mut(index.1)
+    }
+}
+
+fn calc_permutations(nums: &[i32]) -> usize {
     let Some((head, tail)) = nums.split_first() else { return 1; };
     if tail.len() <= 1 {
         return 1;
@@ -101,35 +123,23 @@ fn calc_permutations(nums: &[i32], memo: &mut Table<usize>) -> usize {
         std::cmp::Ordering::Greater => true,
     });
 
-    calc_permutations(&a, memo)
-        .mul_mod(calc_permutations(&b, memo))
-        .mul_mod(calc_spliced_permutations(a.len(), b.len(), memo))
+    calc_permutations(&a)
+        .mul_mod(calc_permutations(&b))
+        .mul_mod(calc_spliced_permutations(a.len(), b.len()))
 }
 
-fn calc_spliced_permutations(a: usize, b: usize, memo: &mut Table<usize>) -> usize {
-    if a == 0 || b == 0 {
-        1
-    } else if a == 1 {
-        b + 1
-    } else if b == 1 {
-        a + 1
+fn calc_spliced_permutations(a: usize, b: usize) -> usize {
+    let index = TableIndex::new(a, b);
+    if index.is_valid() {
+        TABLE[index]
     } else {
-        let index = TableIndex::new(a, b);
-        if let &Some(cached) = memo.get(&index) {
-            cached
-        } else {
-            let value = calc_spliced_permutations(a - 1, b, memo)
-                .add_mod(calc_spliced_permutations(a, b - 1, memo));
-            memo.insert(&index, value);
-            value
-        }
+        calc_spliced_permutations(a - 1, b).add_mod(calc_spliced_permutations(a, b - 1))
     }
 }
 
 impl Solution {
     pub fn num_of_ways(nums: Vec<i32>) -> i32 {
-        let mut memo = Table::new();
-        ((calc_permutations(&nums, &mut memo) - 1) % MAX) as i32
+        ((calc_permutations(&nums) - 1) % MAX) as i32
     }
 }
 
