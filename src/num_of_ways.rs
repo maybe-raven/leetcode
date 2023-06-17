@@ -15,7 +15,7 @@
 // keep x being the first number that is greater than `head`, and
 // y being first number that is less than `head`.
 
-use std::{collections::BTreeMap, u128};
+use std::{collections::HashMap, u128};
 
 const MAX: u128 = 1000000007;
 
@@ -39,7 +39,7 @@ impl AddMod for u128 {
     }
 }
 
-fn calc_permutations(nums: &[i32], memo: &mut BTreeMap<(usize, usize), u128>) -> u128 {
+fn calc_permutations(nums: &[i32], memo: &mut HashMap<(usize, usize), u128>) -> u128 {
     let Some((head, tail)) = nums.split_first() else { return 1; };
     if tail.len() <= 1 {
         return 1;
@@ -58,11 +58,7 @@ fn calc_permutations(nums: &[i32], memo: &mut BTreeMap<(usize, usize), u128>) ->
         .mul_mod(calc_spliced_permutations(a.len(), b.len(), memo))
 }
 
-fn calc_spliced_permutations(
-    a: usize,
-    b: usize,
-    memo: &mut BTreeMap<(usize, usize), u128>,
-) -> u128 {
+fn calc_spliced_permutations(a: usize, b: usize, memo: &mut HashMap<(usize, usize), u128>) -> u128 {
     if a == 0 || b == 0 {
         1
     } else if a == 1 {
@@ -85,7 +81,7 @@ fn calc_spliced_permutations(
 
 impl Solution {
     pub fn num_of_ways(nums: Vec<i32>) -> i32 {
-        let mut memo = BTreeMap::new();
+        let mut memo = HashMap::new();
         ((calc_permutations(&nums, &mut memo) - 1) % MAX) as i32
     }
 }
