@@ -15,15 +15,15 @@
 // keep x being the first number that is greater than `head`, and
 // y being first number that is less than `head`.
 
-use std::{collections::HashMap, u128};
+use std::collections::HashMap;
 
-const MAX: u128 = 1000000007;
+const MAX: usize = 1000000007;
 
 trait MulMod {
     fn mul_mod(self, other: Self) -> Self;
 }
 
-impl MulMod for u128 {
+impl MulMod for usize {
     fn mul_mod(self, other: Self) -> Self {
         (self * other) % MAX
     }
@@ -33,13 +33,13 @@ trait AddMod {
     fn add_mod(self, other: Self) -> Self;
 }
 
-impl AddMod for u128 {
+impl AddMod for usize {
     fn add_mod(self, other: Self) -> Self {
         (self + other) % MAX
     }
 }
 
-fn calc_permutations(nums: &[i32], memo: &mut HashMap<(usize, usize), u128>) -> u128 {
+fn calc_permutations(nums: &[i32], memo: &mut HashMap<(usize, usize), usize>) -> usize {
     let Some((head, tail)) = nums.split_first() else { return 1; };
     if tail.len() <= 1 {
         return 1;
@@ -58,13 +58,17 @@ fn calc_permutations(nums: &[i32], memo: &mut HashMap<(usize, usize), u128>) -> 
         .mul_mod(calc_spliced_permutations(a.len(), b.len(), memo))
 }
 
-fn calc_spliced_permutations(a: usize, b: usize, memo: &mut HashMap<(usize, usize), u128>) -> u128 {
+fn calc_spliced_permutations(
+    a: usize,
+    b: usize,
+    memo: &mut HashMap<(usize, usize), usize>,
+) -> usize {
     if a == 0 || b == 0 {
         1
     } else if a == 1 {
-        (b + 1) as u128
+        (b + 1) as usize
     } else if b == 1 {
-        (a + 1) as u128
+        (a + 1) as usize
     } else {
         let key = if a > b { (b, a) } else { (a, b) };
 
