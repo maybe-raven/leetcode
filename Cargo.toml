@@ -12,5 +12,11 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "equal_pairs_bench"
+name = "num_of_ways_bench"
 harness = false
+
+[profile.bench]
+debug = true
+
+[profile.release]
+debug = true
