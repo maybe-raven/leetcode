@@ -27,23 +27,22 @@ enum Index {
 impl Sub for Index {
     type Output = usize;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Index::Inclusive(lhs), Index::Inclusive(rhs)) => lhs.checked_sub(rhs).unwrap_or(0),
+            (Index::Inclusive(lhs), Index::Inclusive(rhs)) => lhs.saturating_sub(rhs),
             (Index::Inclusive(lhs), Index::Exclusive(rhs))
             | (Index::Exclusive(lhs), Index::Inclusive(rhs))
-            | (Index::Exclusive(lhs), Index::Exclusive(rhs)) => {
-                lhs.checked_sub(rhs + 1).unwrap_or(0)
-            }
+            | (Index::Exclusive(lhs), Index::Exclusive(rhs)) => lhs.saturating_sub(rhs + 1),
         }
     }
 }
 
 impl Solution {
     pub fn make_array_increasing(arr1: Vec<i32>, mut arr2: Vec<i32>) -> i32 {
-        match arr1.as_slice() {
-            &[_single_item] => return 0,
-            &[a, b] => {
+        match *arr1.as_slice() {
+            [_single_item] => return 0,
+            [a, b] => {
                 let check_single_swap = |x: i32| x > a || x < b;
 
                 // [10, 1], [9, 2, 8, 3, 7, 4]
