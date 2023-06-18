@@ -1,7 +1,11 @@
 //! 1187. Make Array Strictly Increasing
 //! https://leetcode.com/problems/make-array-strictly-increasing
 
-use std::{marker::PhantomData, ops::RangeBounds};
+use std::{
+    cmp::min,
+    marker::PhantomData,
+    ops::{Range, RangeBounds},
+};
 
 // trait CappedRange {
 //     fn cap(&self, source: &[T]) -> impl RangeBounds;
@@ -197,6 +201,33 @@ impl<T: Ord, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWin
     }
 }
 
+trait CheckWindow {
+    fn check_window(&self, start: usize, end: usize, replacement: &Self) -> bool;
+}
+
+impl<T: Ord> CheckWindow for [T] {
+    fn check_window(&self, start: usize, end: usize, replacement: &Self) -> bool {
+        // assert!(replacement.is_sorted());
+        assert_eq!(end - start, replacement.len());
+
+        const ERRMSG: &str = "`replacement` must not be empty.";
+
+        let left_is_ordered = if start == 0 {
+            true
+        } else {
+            &self[start - 1] < replacement.first().expect(ERRMSG)
+        };
+
+        let right_is_ordered = if end < self.len() {
+            &self[end] > replacement.last().expect(ERRMSG)
+        } else {
+            true
+        };
+
+        left_is_ordered && right_is_ordered
+    }
+}
+
 impl Solution {
     pub fn make_array_increasing(arr1: Vec<i32>, mut arr2: Vec<i32>) -> i32 {
         match arr1.as_slice() {
@@ -236,8 +267,22 @@ impl Solution {
         }
 
         arr2.sort_unstable();
+        arr2.dedup();
+
+        let memo: Vec<Option<usize>> = arr1
+            .iter()
+            .map(|x| {
+                let i = arr2.partition_point(|y| y < x);
+                if i == 0 {
+                    None
+                } else {
+                    Some(i - 1)
+                }
+            })
+            .collect();
 
         // [1, 3, 2, 4, 7], [0, 4, 5, 6]
+        // [2, 4, 3, 1, 7], [0, 4, 5, 6]
 
         #[allow(unused)]
         for (i, window) in arr1.windows(2).enumerate() {
@@ -247,12 +292,40 @@ impl Solution {
                 continue;
             }
 
+            // i = 1
+            // n = 1;
+            // end starts at i + 1, goes up to i + n + 1;
+            // start = end - n;
+            // start in i + 1 - n .. i + 1
+            // want [3] and [2]
+            // 1..2 and 2..3
+            // n = 2;
+            // want [1, 3], [3, 2], and [2, 4]
+            // 0..2, 1..3, and 2..4
+            // n = 3;
+            // -1..2, 0..3, 1..4, 2..5
+            // -1..2 We want to ignore this one, because it's the same as 0..2.
             let mut n = 1;
             loop {
-                for offset in 0..n {
-                    let start = i - offset;
-                    let range = start..start + n;
+                for end in i + 1..min(i + n + 1, arr1.len()) {
+                    if end < n {
+                        continue;
+                    }
+
+                    let start = end - n;
+
+                    for replacement in arr2.windows(n) {
+                        if arr1.check_window(start, end, replacement) {
+                            break;
+                        }
+                    }
+
+                    unimplemented!()
                 }
+                // for offset in -n..1 {
+                //     let start = i as i32 - offset;
+                //     let range = start..start + n;
+                // }
             }
 
             unimplemented!()
