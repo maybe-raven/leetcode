@@ -1,7 +1,11 @@
 //! 1187. Make Array Strictly Increasing
 //! https://leetcode.com/problems/make-array-strictly-increasing
 
-use std::{cmp::min, marker::PhantomData, ops::RangeBounds};
+use std::{
+    cmp::{max, min},
+    marker::PhantomData,
+    ops::RangeBounds,
+};
 
 // trait CappedRange {
 //     fn cap(&self, source: &[T]) -> impl RangeBounds;
@@ -197,6 +201,18 @@ impl<T: Ord, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWin
     }
 }
 
+trait SetAll<T> {
+    fn set_all(&mut self, value: T);
+}
+
+impl<T: Copy> SetAll<T> for [T] {
+    fn set_all(&mut self, value: T) {
+        for x in self {
+            *x = value;
+        }
+    }
+}
+
 trait CheckWindow {
     fn check_window(&self, start: usize, end: usize, replacement: &Self) -> bool;
 }
@@ -236,21 +252,24 @@ struct Range {
 }
 
 impl Range {
-    fn new(first: usize, second: usize, indexer: &[Index]) -> Self {
-        let start = if first == 0 {
-            Index::Inclusive(0)
-        } else {
-            indexer[first - 1]
-        };
-
-        let end = if second == indexer.len() {
-            Index::Inclusive(indexer.len())
-        } else {
-            indexer[second]
-        };
-
+    fn new(start: Index, end: Index) -> Self {
         Self { start, end }
     }
+    // fn new(first: usize, second: usize, indexer: &[Index]) -> Self {
+    //     let start = if first == 0 {
+    //         Index::Inclusive(0)
+    //     } else {
+    //         indexer[first - 1]
+    //     };
+    //
+    //     let end = if second == indexer.len() {
+    //         Index::Inclusive(indexer.len())
+    //     } else {
+    //         indexer[second]
+    //     };
+    //
+    //     Self { start, end }
+    // }
 
     fn space(&self) -> usize {
         match (self.start, self.end) {
@@ -348,40 +367,50 @@ impl Solution {
         // n = 1; 0!..2! = 2 - 0 - 1 = 1 ^
         // i = 4; [8, 6]
         // n = 1; 3!..5 = 5 - 3 - 1 = 1
+        //
+        // [1, 5, 3, 3, 4, 5], [0, 1, 2], [1!, 3, 3, 3, 3, 3] => [*0*, *1*, *2*, 3, 4, 5]
+        // i = 1; [5, 3]
+        // n = 1; 1!..3 = 3 - 1 - 1 = 1 ^;
+        // i = 2; [3, 3]
+        // n = 1; 3..3; 3..3;
+        // n = 2; 1!..3 = 3 - 1 - 1 = 1; 3..3; 3..3;
+        // n = 3; 0..3 = 3 ^
+
+        let mut masks = vec![false; arr1.len()];
 
         #[allow(unused)]
-        for (i, window) in arr1.windows(2).enumerate() {
+        'outer: for (i, window) in arr1.windows(2).enumerate() {
             let &[a, b] = window else { unreachable!() };
 
             if a < b {
                 continue;
             }
 
-            for n in 1..min(arr1.len(), arr2.len()) {
-                for end in i + 1..min(i + n + 1, arr1.len()) {
-                    // Continue if `start` would be less than 0.
-                    if end < n {
-                        continue;
-                    }
-
+            for n in 1..=min(arr1.len(), arr2.len()) {
+                // We want `start = i + 1 - n > 0` so `i + 1 > n`
+                for end in max(n, i + 1)..=min(i + n + 1, arr1.len()) {
                     let start = end - n;
 
-                    if n <= Range::new(start, end, &memo).space() {
-                        // Then this swap will work.
-                    }
+                    let min_index = if start == 0 {
+                        Index::Inclusive(0)
+                    } else {
+                        memo[start - 1]
+                    };
 
-                    for replacement in arr2.windows(n) {
-                        if arr1.check_window(start, end, replacement) {
-                            break;
-                        }
-                    }
+                    let max_index = if end == memo.len() {
+                        Index::Inclusive(arr2.len())
+                    } else {
+                        memo[end]
+                    };
 
-                    unimplemented!()
+                    if n <= Range::new(min_index, max_index).space() {
+                        masks[start..end].set_all(true);
+                        continue 'outer;
+                    }
                 }
-                unimplemented!()
             }
 
-            // At this point there's probably no way to complete the objective.
+            return -1;
 
             // Need to find `c` in `arr2` such that `arr1[i - 1] < c < b`,
             // in which case `c` can replace `a`.
@@ -403,33 +432,33 @@ impl Solution {
             // n = 3;
             // -1..2, 0..3, 1..4, 2..5
             // -1..2 We want to ignore this one, because it's the same as 0..2.
-            let mut n = 1;
-            loop {
-                for end in i + 1..min(i + n + 1, arr1.len()) {
-                    if end < n {
-                        continue;
-                    }
-
-                    let start = end - n;
-
-                    for replacement in arr2.windows(n) {
-                        if arr1.check_window(start, end, replacement) {
-                            break;
-                        }
-                    }
-
-                    unimplemented!()
-                }
-                // for offset in -n..1 {
-                //     let start = i as i32 - offset;
-                //     let range = start..start + n;
-                // }
-            }
-
-            unimplemented!()
+            // let mut n = 1;
+            // loop {
+            //     for end in i + 1..min(i + n + 1, arr1.len()) {
+            //         if end < n {
+            //             continue;
+            //         }
+            //
+            //         let start = end - n;
+            //
+            //         for replacement in arr2.windows(n) {
+            //             if arr1.check_window(start, end, replacement) {
+            //                 break;
+            //             }
+            //         }
+            //
+            //         unimplemented!()
+            //     }
+            //     // for offset in -n..1 {
+            //     //     let start = i as i32 - offset;
+            //     //     let range = start..start + n;
+            //     // }
+            // }
+            //
+            // unimplemented!()
         }
 
-        unimplemented!()
+        masks.into_iter().filter(|&x| x).count() as i32
     }
 }
 
