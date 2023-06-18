@@ -224,6 +224,46 @@ impl<T: Ord> CheckWindow for [T] {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum Index {
+    Inclusive(usize),
+    Exclusive(usize),
+}
+
+struct Range {
+    start: Index,
+    end: Index,
+}
+
+impl Range {
+    fn new(first: usize, second: usize, indexer: &[Index]) -> Self {
+        let start = if first == 0 {
+            Index::Inclusive(0)
+        } else {
+            indexer[first - 1]
+        };
+
+        let end = if second == indexer.len() {
+            Index::Inclusive(indexer.len())
+        } else {
+            indexer[second]
+        };
+
+        Self { start, end }
+    }
+
+    fn space(&self) -> usize {
+        match (self.start, self.end) {
+            (Index::Inclusive(start), Index::Inclusive(end)) => end.checked_sub(start).unwrap_or(0),
+            (Index::Inclusive(start), Index::Exclusive(end))
+            | (Index::Exclusive(start), Index::Inclusive(end))
+            | (Index::Exclusive(start), Index::Exclusive(end)) => {
+                end.checked_sub(start + 1).unwrap_or(0)
+            }
+        }
+    }
+}
+
 impl Solution {
     pub fn make_array_increasing(arr1: Vec<i32>, mut arr2: Vec<i32>) -> i32 {
         match arr1.as_slice() {
@@ -265,9 +305,12 @@ impl Solution {
         arr2.sort_unstable();
         arr2.dedup();
 
-        let memo: Vec<i32> = arr1
+        let memo: Vec<Index> = arr1
             .iter()
-            .map(|x| arr2.partition_point(|y| y < x).checked_sub(1).unwrap_or(0) as i32)
+            .map(|x| match arr2.binary_search(x) {
+                Ok(i) => Index::Exclusive(i),
+                Err(i) => Index::Inclusive(i),
+            })
             .collect();
 
         // `!` means exclusive
@@ -323,14 +366,7 @@ impl Solution {
 
                     let start = end - n;
 
-                    let min_index = if start == 0 { 0 } else { memo[start - 1] };
-                    let max_index = if end == memo.len() {
-                        memo.len() as i32
-                    } else {
-                        memo[end]
-                    };
-
-                    if n as i32 <= max_index - min_index - 1 {
+                    if n <= Range::new(start, end, &memo).space() {
                         // Then this swap will work.
                     }
 
