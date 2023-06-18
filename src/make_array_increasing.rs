@@ -30,9 +30,9 @@ impl Sub for Index {
     #[allow(clippy::suspicious_arithmetic_impl)]
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Index::Inclusive(lhs), Index::Inclusive(rhs)) => lhs.saturating_sub(rhs),
+            (Index::Exclusive(lhs), Index::Inclusive(rhs))
+            | (Index::Inclusive(lhs), Index::Inclusive(rhs)) => lhs.saturating_sub(rhs),
             (Index::Inclusive(lhs), Index::Exclusive(rhs))
-            | (Index::Exclusive(lhs), Index::Inclusive(rhs))
             | (Index::Exclusive(lhs), Index::Exclusive(rhs)) => lhs.saturating_sub(rhs + 1),
         }
     }
@@ -79,6 +79,17 @@ impl Solution {
         arr2.sort_unstable();
         arr2.dedup();
 
+        // Build a "map" of indices of replacement for every number in `arr1`.
+        //
+        // For all `i` where `0 <= i < arr1.len()`,
+        // we have `arr2[..memo[i]] < arr1[i] <= arr2[memo[i]..]`.
+        //
+        // So given `i` and `j` where `0 <= i < j < arr1.len()`,
+        // we have `arr1[i] <= arr2[memo[i]..memo[j]] < arr1[j]`.
+        // Or alternatively, `arr1[i] < arr2[k..memo[j]] < arr1[j]`,
+        // where `k = memo[i]` if `arr1[i] != arr2[memo[i]]` else `k = memo[i] + 1`.
+        // From this, we can know there are `memo[j] - k` numbers in `arr2` that
+        // fit between `arr1[i]` and `arr1[j]`.
         let memo: Vec<Index> = arr1
             .iter()
             .map(|x| match arr2.binary_search(x) {
@@ -97,7 +108,19 @@ impl Solution {
             }
 
             for n in 1..=min(arr1.len(), arr2.len()) {
-                // We want `start = i + 1 - n > 0` so `i + 1 > n`
+                // `end - start = n`; `n` is the length of the slicing.
+                // `arr1[start..end]` is the slice that we're looking to replace in order to fix
+                // it's ordering. So it can only be as long as the shorter of `arr1` and `arr2`.
+
+                // We want as small an `n` as possible, so we want to explore all the possible
+                // slices that contain either `a` or `b`, or both.
+                // We want all possible `start` and `end` given `n`,
+                // where `0 <= start <= i + 1` (starting on `b` or before),
+                // and `arr1.len() >= end >= i + 1` (ending on and including `a` or after).
+
+                // Since `end = start + n` and `start <= i + 1`, `end <= i + 1 + n`.
+                // We want `start >= 0`; we have `start = end - n` and `end >= i + 1`,
+                // therefore we want `i + 1 - n >= 0`, therefore `i + 1 >= n`
                 for end in max(n, i + 1)..=min(i + n + 1, arr1.len()) {
                     let start = end - n;
 
@@ -161,7 +184,7 @@ mod tests {
         );
         assert_eq!(
             2,
-            Solution::make_array_increasing(vec![2, 4, 3, 1, 7], vec![0, 1, 3, 5, 6]) // [2, 4, *5*, *6*, 7]
+            Solution::make_array_increasing(vec![2, 4, 3, 1, 7], vec![0, 1, 3, 5, 6]) // [2, 4, *5*, *6*, 7] | [*0*, *1*, 3, *5|6*, 7]
         );
         assert_eq!(
             2,
