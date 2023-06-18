@@ -1,11 +1,7 @@
 //! 1187. Make Array Strictly Increasing
 //! https://leetcode.com/problems/make-array-strictly-increasing
 
-use std::{
-    cmp::min,
-    marker::PhantomData,
-    ops::{Range, RangeBounds},
-};
+use std::{cmp::min, marker::PhantomData, ops::RangeBounds};
 
 // trait CappedRange {
 //     fn cap(&self, source: &[T]) -> impl RangeBounds;
@@ -269,20 +265,50 @@ impl Solution {
         arr2.sort_unstable();
         arr2.dedup();
 
-        let memo: Vec<Option<usize>> = arr1
+        let memo: Vec<usize> = arr1
             .iter()
-            .map(|x| {
-                let i = arr2.partition_point(|y| y < x);
-                if i == 0 {
-                    None
-                } else {
-                    Some(i - 1)
-                }
-            })
+            .map(|x| arr2.partition_point(|y| y <= x).checked_sub(1).unwrap_or(0))
             .collect();
 
-        // [1, 3, 2, 4, 7], [0, 4, 5, 6]
-        // [2, 4, 3, 1, 7], [0, 4, 5, 6]
+        // [1, 3, 5, 4], [4, 5, 6, 7], [?, ?, 1, 0] => [1, 3, 5, *7*]
+        // i = 2; looking at [5, 4]
+        // n = 1; 0..0; 1..4
+
+        // [1, 3, 2, 4, 7], [0, 4, 5, 6], [1, 1, 1, 1, 4] => [1, 3, *4*, *5*, 7]
+        // i = 1; looking at [3, 2]
+        // n = 1; 1..1; 1..1;
+        // n = 2; 0..1; 1..1; 1..4; ^
+        // [2, 4, 3, 1, 7], [0, 4, 5, 6], [1, 1, 1, 1, 4] => [2, 4, *5*, *6*, 7]
+        // i = 1, looking at [4, 3];
+        // n = 1; 1..1; 1..1
+        // n = 2; 0..1; 1..1; 1..4; ^
+        // [2, 4, 3, 1, 7], [0, 1, 3, 5, 6], [2, 3, 2, 1, 5] => [2, 4, *5*, *6*, 7]
+        // i = 1; looking at [4, 3]
+        // n = 1; 2..2; 3..1;
+        // n = 2; 0..2; 2..1; 3..5 !!!;
+
+        // [2, 4, 3, 1, 7], [0, 4, 5, 6], [0, 1, 0, 0, 4] => [2, 4, *5*, *6*, 7]
+        // i = 1, looking at [4, 3];
+        // n = 1; 0..0; 1..0
+        // n = 2; 0..0; 0..0; 1..4; ^
+        // [2, 4, 3, 1, 7], [0, 1, 3, 5, 6], [1, 2, 2?, 1?, 5] => [2, 4, *5*, *6*, 7]
+        // i = 1; looking at [4, 3]
+        // n = 1; 1..2; 2..1;
+        // n = 2; 0..2; 1..1; 2..5 ^;
+
+        // [1, 2, 3, 10, 4], [0, 1, 2, 3, 4, 5], [1, 2, 3, 6, 4], [2, 3, 4, None, 5]
+        // n = 1; exclusive 3..4 has length of 0, exclusive 6..6 has length of 0
+        // n = 2; exclusive 2..4 has length of 1, exclusive 3..6 has lenght of 2
+        // [1,5,3,6,7], [1,2,3,4], [0, 4, 2, 4, 4] => [1, *2*, 3, 6, 7]
+        // i = 1; looking at [5, 3]
+        // n = 1; 0..2; ^
+
+        // [1, 2, 3, 10, 4], [0, 1, 2, 3, 4, 5], [1, 2, 3, 6, 4], [2, 3, 4, None, 5]
+        // n = 1; exclusive 3..4 has length of 0, exclusive 6..6 has length of 0
+        // n = 2; exclusive 2..4 has length of 1, exclusive 3..6 has lenght of 2
+        // [1,5,3,6,7], [1,2,3,4], [0, 4, 2, 4, 4] => [1, *2*, 3, 6, 7]
+        // i = 1; looking at [5, 3]
+        // n = 1; 0..2; ^
 
         #[allow(unused)]
         for (i, window) in arr1.windows(2).enumerate() {
@@ -291,6 +317,46 @@ impl Solution {
             if a < b {
                 continue;
             }
+
+            for n in 1..min(arr1.len(), arr2.len()) {
+                for end in i + 1..min(i + n + 1, arr1.len()) {
+                    // Continue if `start` would be less than 0.
+                    if end < n {
+                        continue;
+                    }
+
+                    let start = end - n;
+
+                    let min_index = if start == 0 { 0 } else { memo[start - 1] };
+                    let max_index = if end == memo.len() {
+                        memo.len()
+                    } else {
+                        memo[end]
+                    };
+
+                    if n <= max_index - min_index - 1 {
+                        // Then this swap will work.
+                    }
+
+                    for replacement in arr2.windows(n) {
+                        if arr1.check_window(start, end, replacement) {
+                            break;
+                        }
+                    }
+
+                    unimplemented!()
+                }
+                unimplemented!()
+            }
+
+            // At this point there's probably no way to complete the objective.
+
+            // Need to find `c` in `arr2` such that `arr1[i - 1] < c < b`,
+            // in which case `c` can replace `a`.
+            // `arr2[j] < arr1[i - 1]` for all `j` in `..memo[i - 1]`
+            // `arr2[k] < arr1[i + 1]` for all `k` in `..memo[i + 1]`
+            // for `c` in `arr2[memo[i - 1]..memo[i + 1]]`, find `arr1[i - 1] < c`
+            // If this fails, expand to the left until `memo[i + 1] < i`.
 
             // i = 1
             // n = 1;
