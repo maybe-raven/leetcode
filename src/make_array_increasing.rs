@@ -1,7 +1,10 @@
 //! 1187. Make Array Strictly Increasing
 //! https://leetcode.com/problems/make-array-strictly-increasing
 
-use std::cmp::{max, min};
+use std::{
+    cmp::{max, min},
+    ops::Sub,
+};
 
 trait SetAll<T> {
     fn set_all(&mut self, value: T);
@@ -19,6 +22,21 @@ impl<T: Copy> SetAll<T> for [T] {
 enum Index {
     Inclusive(usize),
     Exclusive(usize),
+}
+
+impl Sub for Index {
+    type Output = usize;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Index::Inclusive(lhs), Index::Inclusive(rhs)) => lhs.checked_sub(rhs).unwrap_or(0),
+            (Index::Inclusive(lhs), Index::Exclusive(rhs))
+            | (Index::Exclusive(lhs), Index::Inclusive(rhs))
+            | (Index::Exclusive(lhs), Index::Exclusive(rhs)) => {
+                lhs.checked_sub(rhs + 1).unwrap_or(0)
+            }
+        }
+    }
 }
 
 impl Solution {
@@ -96,18 +114,7 @@ impl Solution {
                         memo[end]
                     };
 
-                    let space = match (min_index, max_index) {
-                        (Index::Inclusive(start), Index::Inclusive(end)) => {
-                            end.checked_sub(start).unwrap_or(0)
-                        }
-                        (Index::Inclusive(start), Index::Exclusive(end))
-                        | (Index::Exclusive(start), Index::Inclusive(end))
-                        | (Index::Exclusive(start), Index::Exclusive(end)) => {
-                            end.checked_sub(start + 1).unwrap_or(0)
-                        }
-                    };
-
-                    if n <= space {
+                    if n <= max_index - min_index {
                         masks[start..end].set_all(true);
                         continue 'outer;
                     }
