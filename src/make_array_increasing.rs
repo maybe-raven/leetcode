@@ -6,18 +6,6 @@ use std::{
     ops::Sub,
 };
 
-trait SetAll<T> {
-    fn set_all(&mut self, value: T);
-}
-
-impl<T: Copy> SetAll<T> for [T] {
-    fn set_all(&mut self, value: T) {
-        for x in self {
-            *x = value;
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 enum Index {
     Inclusive(usize),
@@ -98,56 +86,70 @@ impl Solution {
             })
             .collect();
 
-        let mut masks = vec![false; arr1.len()];
+        inner(&arr1, &memo, arr2.len(), 0).map_or(-1, |x| x as i32)
+    }
+}
 
-        'outer: for (i, window) in arr1.windows(2).enumerate() {
-            let &[a, b] = window else { unreachable!() };
+fn inner(arr1: &[i32], memo: &[Index], arr2_len: usize, start: usize) -> Option<usize> {
+    for (i, window) in arr1.windows(2).enumerate().skip(start) {
+        let &[a, b] = window else { unreachable!() };
 
-            if a < b {
-                continue;
-            }
+        if a < b {
+            continue;
+        }
 
-            for n in 1..=min(arr1.len(), arr2.len()) {
-                // `end - start = n`; `n` is the length of the slicing.
-                // `arr1[start..end]` is the slice that we're looking to replace in order to fix
-                // it's ordering. So it can only be as long as the shorter of `arr1` and `arr2`.
+        let mut min_swaps = None;
 
-                // We want as small an `n` as possible, so we want to explore all the possible
-                // slices that contain either `a` or `b`, or both.
-                // We want all possible `start` and `end` given `n`,
-                // where `0 <= start <= i + 1` (starting on `b` or before),
-                // and `arr1.len() >= end >= i + 1` (ending on and including `a` or after).
+        for n in 1..=min(arr1.len(), arr2_len) {
+            // `end - start = n`; `n` is the length of the slicing.
+            // `arr1[start..end]` is the slice that we're looking to replace in order to fix
+            // it's ordering. So it can only be as long as the shorter of `arr1` and `arr2`.
 
-                // Since `end = start + n` and `start <= i + 1`, `end <= i + 1 + n`.
-                // We want `start >= 0`; we have `start = end - n` and `end >= i + 1`,
-                // therefore we want `i + 1 - n >= 0`, therefore `i + 1 >= n`
-                for end in max(n, i + 1)..=min(i + n + 1, arr1.len()) {
-                    let start = end - n;
+            // We want as small an `n` as possible, so we want to explore all the possible
+            // slices that contain either `a` or `b`, or both.
+            // We want all possible `start` and `end` given `n`,
+            // where `0 <= start <= i + 1` (starting on `b` or before),
+            // and `arr1.len() >= end >= i + 1` (ending on and including `a` or after).
 
-                    let min_index = if start == 0 {
-                        Index::Inclusive(0)
-                    } else {
-                        memo[start - 1]
+            // Since `end = start + n` and `start <= i + 1`, `end <= i + 1 + n`.
+            // We want `start >= 0`; we have `start = end - n` and `end >= i + 1`,
+            // therefore we want `i + 1 - n >= 0`, therefore `i + 1 >= n`
+            for end in max(n, i + 1)..=min(i + n + 1, arr1.len()) {
+                let start = end - n;
+
+                let min_index = if start == 0 {
+                    Index::Inclusive(0)
+                } else {
+                    memo[start - 1]
+                };
+
+                let max_index = if end == memo.len() {
+                    Index::Inclusive(arr2_len)
+                } else {
+                    memo[end]
+                };
+
+                if n <= max_index - min_index {
+                    let Some(n_rest) = inner(arr1, memo, arr2_len, end) else {
+                        continue;
                     };
+                    let n_swaps = n_rest + n;
 
-                    let max_index = if end == memo.len() {
-                        Index::Inclusive(arr2.len())
+                    if let Some(min_n_swaps) = min_swaps {
+                        if n_swaps < min_n_swaps {
+                            min_swaps = Some(n_swaps);
+                        }
                     } else {
-                        memo[end]
-                    };
-
-                    if n <= max_index - min_index {
-                        masks[start..end].set_all(true);
-                        continue 'outer;
+                        min_swaps = Some(n_swaps);
                     }
                 }
             }
-
-            return -1;
         }
 
-        masks.into_iter().filter(|&x| x).count() as i32
+        return min_swaps;
     }
+
+    Some(0)
 }
 
 pub struct Solution;
@@ -160,7 +162,7 @@ mod tests {
     fn test_solution() {
         assert_eq!(
             1,
-            Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 3, 2, 4])
+            Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 3, 2, 4]) // [1, *2*, 3, 6, 7]
         );
         assert_eq!(
             2,
