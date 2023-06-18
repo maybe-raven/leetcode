@@ -482,5 +482,37 @@ mod tests {
             -1,
             Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 6, 3, 3])
         );
+        assert_eq!(
+            1,
+            Solution::make_array_increasing(vec![1, 3, 5, 4], vec![4, 5, 6, 7]) // [1, 3, 5, *7*]
+        );
+        assert_eq!(
+            2,
+            Solution::make_array_increasing(vec![1, 3, 2, 4, 7], vec![0, 4, 5, 6]) // [1, 3, *4*, *5*, 7]
+        );
+        assert_eq!(
+            2,
+            Solution::make_array_increasing(vec![2, 4, 3, 1, 7], vec![0, 4, 5, 6]) // [2, 4, *5*, *6*, 7]
+        );
+        assert_eq!(
+            2,
+            Solution::make_array_increasing(vec![2, 4, 3, 1, 7], vec![0, 1, 3, 5, 6]) // [2, 4, *5*, *6*, 7]
+        );
+        assert_eq!(
+            2,
+            Solution::make_array_increasing(vec![1, 2, 3, 10, 4], vec![0, 1, 2, 3, 4, 5]) // [1, 2, 3, *4*, *5*]
+        );
+        assert_eq!(
+            1,
+            Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 2, 3, 4]) // [1, *2*, 3, 6, 7]
+        );
+        assert_eq!(
+            2,
+            Solution::make_array_increasing(vec![1, 5, 3, 4, 8, 6], vec![1, 2, 3, 4, 5]) // [1, *2*, 3, 4, *5*, 6]
+        );
+        assert_eq!(
+            3,
+            Solution::make_array_increasing(vec![1, 5, 3, 3, 4, 5], vec![0, 1, 2]) // [*0*, *1*, *2*, 3, 4, 5]
+        );
     }
 }
