@@ -126,12 +126,14 @@ impl<T: Dec + Inc + Copy, R: RangeBounds<T>> RangeGet<T> for R {
     }
 }
 
+#[allow(dead_code)]
 struct OrderedWindow<'a, T, I, R> {
     source: &'a [T],
     range: R,
     i: PhantomData<I>,
 }
 
+#[allow(dead_code)]
 impl<'a, T, I, R> OrderedWindow<'a, T, I, R> {
     fn new(source: &'a [T], range: R) -> Self {
         OrderedWindow {
@@ -142,7 +144,8 @@ impl<'a, T, I, R> OrderedWindow<'a, T, I, R> {
     }
 }
 
-impl<T: Ord, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWindow<'_, T, I, R> {
+#[allow(dead_code)]
+impl<T, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWindow<'_, T, I, R> {
     fn len(&self) -> usize {
         let start = self
             .range
@@ -158,20 +161,29 @@ impl<T: Ord, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWin
     }
 }
 
-impl<'a, T: Ord, I: TryInto<usize>, R: RangeBounds<I>> OrderedWindow<'a, T, I, R> {
+#[allow(dead_code)]
+impl<T: Ord, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWindow<'_, T, I, R> {
     fn check_replacement(&self, replacement: &[T]) -> bool {
         // assert!(replacement.is_sorted());
         assert_eq!(self.len(), replacement.len());
 
         const ERRMSG: &str = "`replacement` must not be empty.";
 
-        let left_is_ordered = if let Some(left_index) = self.range.get_exclusive_start() {
+        let left_is_ordered = if let Some(left_index) = self
+            .range
+            .get_exclusive_start()
+            .and_then(|x| x.try_into().ok())
+        {
             &self.source[left_index] < replacement.first().expect(ERRMSG)
         } else {
             true
         };
 
-        let right_is_ordered = if let Some(right_index) = self.range.get_exclusive_end() {
+        let right_is_ordered = if let Some(right_index) = self
+            .range
+            .get_exclusive_end()
+            .and_then(|x| x.try_into().ok())
+        {
             if right_index < self.source.len() {
                 &self.source[right_index] < replacement.last().expect(ERRMSG)
             } else {
@@ -181,7 +193,7 @@ impl<'a, T: Ord, I: TryInto<usize>, R: RangeBounds<I>> OrderedWindow<'a, T, I, R
             true
         };
 
-        unimplemented!()
+        left_is_ordered && right_is_ordered
     }
 }
 
