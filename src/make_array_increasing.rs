@@ -1,7 +1,7 @@
 //! 1187. Make Array Strictly Increasing
 //! https://leetcode.com/problems/make-array-strictly-increasing
 
-use std::{marker::PhantomData, ops::RangeBounds};
+use std::ops::RangeBounds;
 
 // trait CappedRange {
 //     fn cap(&self, source: &[T]) -> impl RangeBounds;
@@ -27,36 +27,44 @@ use std::{marker::PhantomData, ops::RangeBounds};
 //     }
 // }
 
-trait Dec: Sized {
-    fn dec(self) -> Self;
+trait CheckedDec: Sized {
+    fn checked_dec(self) -> Option<Self>;
 }
 
-trait Inc: Sized {
-    fn inc(self) -> Self;
+trait CheckedInc: Sized {
+    fn checked_inc(self) -> Option<Self>;
 }
 
-macro_rules! impl_dec {
+macro_rules! impl_checked_dec {
     ($t:ty) => {
-        impl Dec for $t {
-            fn dec(self) -> Self {
-                self - 1
+        impl CheckedDec for $t {
+            fn checked_dec(self) -> Option<Self> {
+                if self == Self::MIN {
+                    None
+                } else {
+                    Some(self - 1)
+                }
             }
         }
     };
 }
 
-macro_rules! impl_inc {
+macro_rules! impl_checked_inc {
     ($t:ty) => {
-        impl Inc for $t {
-            fn inc(self) -> Self {
-                self + 1
+        impl CheckedInc for $t {
+            fn checked_inc(self) -> Option<Self> {
+                if self == Self::MAX {
+                    None
+                } else {
+                    Some(self + 1)
+                }
             }
         }
     };
 }
 
-impl_dec! { i32 }
-impl_inc! { i32 }
+impl_checked_dec! { usize }
+impl_checked_inc! { usize }
 
 trait RangeOrd<T> {
     fn range_lt(&self, other: &T) -> bool;
@@ -92,10 +100,10 @@ trait RangeGet<T> {
     fn get_end(&self) -> Option<T>;
 }
 
-impl<T: Dec + Inc + Copy, R: RangeBounds<T>> RangeGet<T> for R {
+impl<T: CheckedDec + CheckedInc + Copy, R: RangeBounds<T>> RangeGet<T> for R {
     fn get_exclusive_start(&self) -> Option<T> {
         match self.start_bound() {
-            std::ops::Bound::Included(i) => Some(i.dec()),
+            std::ops::Bound::Included(i) => i.checked_dec(),
             std::ops::Bound::Excluded(&i) => Some(i),
             std::ops::Bound::Unbounded => None,
         }
@@ -103,7 +111,7 @@ impl<T: Dec + Inc + Copy, R: RangeBounds<T>> RangeGet<T> for R {
 
     fn get_exclusive_end(&self) -> Option<T> {
         match self.end_bound() {
-            std::ops::Bound::Included(i) => Some(i.inc()),
+            std::ops::Bound::Included(i) => i.checked_inc(),
             std::ops::Bound::Excluded(&i) => Some(i),
             std::ops::Bound::Unbounded => None,
         }
@@ -112,7 +120,7 @@ impl<T: Dec + Inc + Copy, R: RangeBounds<T>> RangeGet<T> for R {
     fn get_start(&self) -> Option<T> {
         match self.start_bound() {
             std::ops::Bound::Included(&i) => Some(i),
-            std::ops::Bound::Excluded(i) => Some(i.inc()),
+            std::ops::Bound::Excluded(i) => i.checked_inc(),
             std::ops::Bound::Unbounded => None,
         }
     }
@@ -120,45 +128,35 @@ impl<T: Dec + Inc + Copy, R: RangeBounds<T>> RangeGet<T> for R {
     fn get_end(&self) -> Option<T> {
         match self.end_bound() {
             std::ops::Bound::Included(&i) => Some(i),
-            std::ops::Bound::Excluded(i) => Some(i.dec()),
+            std::ops::Bound::Excluded(i) => i.checked_dec(),
             std::ops::Bound::Unbounded => None,
         }
     }
 }
 
-struct OrderedWindow<'a, T, I, R> {
+struct OrderedWindow<'a, T, R> {
     source: &'a [T],
     range: R,
-    i: PhantomData<I>,
 }
 
-impl<'a, T, I, R> OrderedWindow<'a, T, I, R> {
-    fn new(source: &'a [T], range: R) -> Self {
+impl<'a, T, R> OrderedWindow<'a, T, R> {
+    fn new<I: Into<R>>(source: &'a [T], rangeable: I) -> Self {
         OrderedWindow {
             source,
-            range,
-            i: PhantomData,
+            range: rangeable.into(),
         }
     }
 }
 
-impl<T: Ord, I: TryInto<usize> + Dec + Inc + Copy, R: RangeBounds<I>> OrderedWindow<'_, T, I, R> {
+impl<T: Ord, R: RangeBounds<usize>> OrderedWindow<'_, T, R> {
     fn len(&self) -> usize {
-        let start = self
-            .range
-            .get_start()
-            .and_then(|x| x.try_into().ok())
-            .unwrap_or(0);
-        let end = self
-            .range
-            .get_exclusive_end()
-            .and_then(|x| x.try_into().ok())
-            .unwrap_or(self.source.len());
+        let start = self.range.get_start().unwrap_or(0);
+        let end = self.range.get_exclusive_end().unwrap_or(self.source.len());
         end - start
     }
 }
 
-impl<'a, T: Ord, I: TryInto<usize>, R: RangeBounds<I>> OrderedWindow<'a, T, I, R> {
+impl<'a, T: Ord, R: RangeBounds<usize>> OrderedWindow<'a, T, R> {
     fn check_replacement(&self, replacement: &[T]) -> bool {
         // assert!(replacement.is_sorted());
         assert_eq!(self.len(), replacement.len());
