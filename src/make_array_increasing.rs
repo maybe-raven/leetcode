@@ -463,3 +463,24 @@ impl Solution {
 }
 
 pub struct Solution;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_solution() {
+        assert_eq!(
+            1,
+            Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 3, 2, 4])
+        );
+        assert_eq!(
+            2,
+            Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![4, 3, 1])
+        );
+        assert_eq!(
+            -1,
+            Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 6, 3, 3])
+        );
+    }
+}
