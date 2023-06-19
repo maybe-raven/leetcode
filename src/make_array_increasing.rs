@@ -21,7 +21,7 @@ enum Number {
 }
 
 impl Solution {
-    pub fn make_array_increasing(arr1: Vec<i32>, mut arr2: Vec<i32>) -> i32 {
+    pub fn make_array_increasing(arr1: Vec<i32>, arr2: Vec<i32>) -> i32 {
         if arr1.len() <= 1 {
             return 0;
         }
@@ -30,8 +30,12 @@ impl Solution {
             .split_first()
             .expect("`arr1` has at least 2 elements past early return.");
 
-        arr2.sort_unstable();
-        arr2.dedup();
+        let arr2 = {
+            let mut arr2 = arr2;
+            arr2.sort_unstable();
+            arr2.dedup();
+            arr2
+        };
 
         let mut current: Vec<(Number, usize)> = Vec::new();
         let mut next: Vec<(Number, usize)> = Vec::new();
