@@ -68,7 +68,7 @@ fn inner(arr1: &[i32], memo: &[Index], arr2_len: usize, start: usize) -> Option<
 
         let mut min_swaps = None;
 
-        for n in 1..=min(arr1.len(), arr2_len) {
+        for n in 1..=min(arr1.len() - start, arr2_len) {
             // `end - start = n`; `n` is the length of the slicing.
             // `arr1[start..end]` is the slice that we're looking to replace in order to fix
             // it's ordering. So it can only be as long as the shorter of `arr1` and `arr2`.
@@ -82,7 +82,7 @@ fn inner(arr1: &[i32], memo: &[Index], arr2_len: usize, start: usize) -> Option<
             // Since `end = start + n` and `start <= i + 1`, `end <= i + 1 + n`.
             // We want `start >= 0`; we have `start = end - n` and `end >= i + 1`,
             // therefore we want `i + 1 - n >= 0`, therefore `i + 1 >= n`
-            for end in max(n, i + 1)..=min(i + n + 1, arr1.len()) {
+            for end in max(n + start, i + 1)..=min(i + n + 1, arr1.len()) {
                 let start = end - n;
 
                 let min_index = if start == 0 {
