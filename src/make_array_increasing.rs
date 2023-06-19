@@ -1,7 +1,18 @@
 //! 1187. Make Array Strictly Increasing
 //! https://leetcode.com/problems/make-array-strictly-increasing
 
-use std::cell::RefCell;
+trait IsNoneOr<T>: Copy {
+    fn is_none_or(self, f: impl FnOnce(T) -> bool) -> bool;
+}
+
+impl<T: Copy> IsNoneOr<T> for Option<T> {
+    fn is_none_or(self, f: impl FnOnce(T) -> bool) -> bool {
+        match self {
+            Some(x) => f(x),
+            None => true,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 enum Number {
@@ -15,60 +26,66 @@ impl Solution {
             return 0;
         }
 
+        let (&head, tail) = arr1
+            .split_first()
+            .expect("`arr1` has at least 2 elements past early return.");
+
         arr2.sort_unstable();
         arr2.dedup();
 
-        let memo: Vec<RefCell<Vec<(Number, usize)>>> = vec![RefCell::new(Vec::new()); arr1.len()];
-
-        memo[0].borrow_mut().push((Number::Original(arr1[0]), 0));
-        if arr1[0] != arr2[0] {
-            memo[0].borrow_mut().push((Number::Replaced(0), 1));
+        let mut current: Vec<(Number, usize)> = Vec::new();
+        let mut next: Vec<(Number, usize)> = Vec::new();
+        current.push((Number::Original(head), 0));
+        if head != arr2[0] {
+            current.push((Number::Replaced(0), 1));
         }
 
-        for (memo_window, x) in memo.windows(2).zip(arr1) {
-            let [previous_states, current_states] = memo_window else { unreachable!() };
+        for &x in tail {
+            let mut min_swaps_for_original = None;
 
-            for &state in previous_states.borrow().iter() {
-                match state {
-                    (Number::Original(y), swap_count) => {
-                        if y < x {
-                            current_states
-                                .borrow_mut()
-                                .push((Number::Original(x), swap_count));
-                        }
-
-                        if let Some(i) = match arr2.binary_search(&y) {
-                            Ok(i) | Err(i) if i < arr2.len() - 1 => Some(i + 1),
-                            Ok(_) | Err(_) => None,
-                        } {
-                            current_states
-                                .borrow_mut()
-                                .push((Number::Replaced(i), swap_count + 1))
-                        }
+            for (num, swaps) in current.drain(..) {
+                let mut check_and_update_min = |previous: i32| {
+                    if previous < x && min_swaps_for_original.is_none_or(|c| swaps < c) {
+                        min_swaps_for_original = Some(swaps);
                     }
-                    (Number::Replaced(mut i), swap_count) => {
-                        if arr2[i] < x {
-                            current_states
-                                .borrow_mut()
-                                .push((Number::Original(x), swap_count));
-                        }
+                };
 
-                        i += 1;
-                        if i < arr2.len() {
-                            current_states
-                                .borrow_mut()
-                                .push((Number::Replaced(i), swap_count + 1));
-                        }
+                let check_replacement_at_index = |i: usize| {
+                    if i < arr2.len() && arr2[i] != x {
+                        Some(i)
+                    } else {
+                        None
                     }
+                };
+
+                if let Some(i) = match num {
+                    Number::Original(a) => {
+                        check_and_update_min(a);
+
+                        let i = match arr2.binary_search(&a) {
+                            Ok(i) => i + 1,
+                            Err(i) => i,
+                        };
+
+                        check_replacement_at_index(i)
+                    }
+                    Number::Replaced(i) => {
+                        check_and_update_min(arr2[i]);
+                        check_replacement_at_index(i + 1)
+                    }
+                } {
+                    next.push((Number::Replaced(i), swaps + 1));
                 }
-
-                unimplemented!()
             }
 
-            todo!()
+            if let Some(swaps) = min_swaps_for_original {
+                next.push((Number::Original(x), swaps));
+            }
+
+            (current, next) = (next, current);
         }
 
-        unimplemented!()
+        current.into_iter().map(|x| x.1 as i32).min().unwrap_or(-1)
     }
 }
 
