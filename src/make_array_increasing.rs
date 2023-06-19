@@ -37,32 +37,30 @@ impl Solution {
             arr2
         };
 
-        let mut current: Vec<(Number, usize)> = Vec::new();
-        let mut next: Vec<(Number, usize)> = Vec::new();
-        current.push((Number::Original(head), 0));
+        let mut previous_states: Vec<(Number, usize)> = Vec::new();
+        let mut next_states: Vec<(Number, usize)> = Vec::new();
+        previous_states.push((Number::Original(head), 0));
         if head != arr2[0] {
-            current.push((Number::Replaced(0), 1));
+            previous_states.push((Number::Replaced(0), 1));
         }
 
-        for &x in tail {
+        for &num in tail {
             let mut min_swaps_for_original = None;
 
-            for (num, swaps) in current.drain(..) {
+            for (previous_num, swaps) in previous_states.drain(..) {
                 let mut check_and_update_min = |previous: i32| {
-                    if previous < x && min_swaps_for_original.is_none_or(|c| swaps < c) {
+                    if previous < num && min_swaps_for_original.is_none_or(|c| swaps < c) {
                         min_swaps_for_original = Some(swaps);
                     }
                 };
 
-                let check_replacement_at_index = |i: usize| {
-                    if i < arr2.len() && arr2[i] != x {
-                        Some(i)
-                    } else {
-                        None
+                let mut check_and_push_replacement_index = |i: usize| {
+                    if i < arr2.len() && arr2[i] != num {
+                        next_states.push((Number::Replaced(i), swaps + 1));
                     }
                 };
 
-                if let Some(i) = match num {
+                match previous_num {
                     Number::Original(a) => {
                         check_and_update_min(a);
 
@@ -71,25 +69,27 @@ impl Solution {
                             Err(i) => i,
                         };
 
-                        check_replacement_at_index(i)
+                        check_and_push_replacement_index(i);
                     }
                     Number::Replaced(i) => {
                         check_and_update_min(arr2[i]);
-                        check_replacement_at_index(i + 1)
+                        check_and_push_replacement_index(i + 1);
                     }
-                } {
-                    next.push((Number::Replaced(i), swaps + 1));
                 }
             }
 
             if let Some(swaps) = min_swaps_for_original {
-                next.push((Number::Original(x), swaps));
+                next_states.push((Number::Original(num), swaps));
             }
 
-            (current, next) = (next, current);
+            (previous_states, next_states) = (next_states, previous_states);
         }
 
-        current.into_iter().map(|x| x.1 as i32).min().unwrap_or(-1)
+        previous_states
+            .into_iter()
+            .map(|x| x.1 as i32)
+            .min()
+            .unwrap_or(-1)
     }
 }
 
