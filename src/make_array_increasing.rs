@@ -41,7 +41,7 @@ impl Sub for Index {
 
 impl Solution {
     pub fn make_array_increasing(arr1: Vec<i32>, mut arr2: Vec<i32>) -> i32 {
-        if arr1.is_empty() {
+        if arr1.len() <= 1 {
             return 0;
         }
 
