@@ -28,40 +28,8 @@ impl Sub for Index {
 
 impl Solution {
     pub fn make_array_increasing(arr1: Vec<i32>, mut arr2: Vec<i32>) -> i32 {
-        match *arr1.as_slice() {
-            [_single_item] => return 0,
-            [a, b] => {
-                let check_single_swap = |x: i32| x > a || x < b;
-
-                // [10, 1], [9, 2, 8, 3, 7, 4]
-                let (&head, arr2) = arr2.split_first().expect("Input is not empty.");
-                if check_single_swap(head) {
-                    return 1;
-                }
-
-                let mut min = head;
-                let mut max = head;
-                for &y in arr2 {
-                    if check_single_swap(y) {
-                        return 1;
-                    }
-
-                    if y < min {
-                        min = y;
-                    }
-
-                    if y > max {
-                        max = y;
-                    }
-                }
-
-                if min < max {
-                    return 2;
-                } else {
-                    return -1;
-                }
-            }
-            _ => (),
+        if arr1.len() == 0 {
+            return 0;
         }
 
         arr2.sort_unstable();
@@ -160,6 +128,16 @@ mod tests {
 
     #[test]
     fn test_solution() {
+        assert_eq!(0, Solution::make_array_increasing(vec![5], vec![2]));
+        assert_eq!(-1, Solution::make_array_increasing(vec![5, 1], vec![2]));
+        assert_eq!(
+            0,
+            Solution::make_array_increasing(vec![1, 2], vec![1, 3, 2, 4])
+        );
+        assert_eq!(
+            1,
+            Solution::make_array_increasing(vec![2, 1], vec![1, 3, 2, 4])
+        );
         assert_eq!(
             1,
             Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 3, 2, 4]) // [1, *2*, 3, 6, 7]
@@ -193,6 +171,14 @@ mod tests {
             Solution::make_array_increasing(vec![1, 2, 3, 10, 4], vec![0, 1, 2, 3, 4, 5]) // [1, 2, 3, *4*, *5*]
         );
         assert_eq!(
+            -1,
+            Solution::make_array_increasing(vec![1, 1, 1, 1, 1, 1, 1, 1], vec![0, 1, 2, 3, 4, 5]) // [1, 2, 3, *4*, *5*]
+        );
+        assert_eq!(
+            5,
+            Solution::make_array_increasing(vec![1, 1, 1, 1, 1, 1], vec![0, 1, 2, 3, 4, 5]) // [1, 2, 3, *4*, *5*]
+        );
+        assert_eq!(
             1,
             Solution::make_array_increasing(vec![1, 5, 3, 6, 7], vec![1, 2, 3, 4]) // [1, *2*, 3, 6, 7]
         );
@@ -203,6 +189,10 @@ mod tests {
         assert_eq!(
             3,
             Solution::make_array_increasing(vec![1, 5, 3, 3, 4, 5], vec![0, 1, 2]) // [*0*, *1*, *2*, 3, 4, 5]
+        );
+        assert_eq!(
+            -1,
+            Solution::make_array_increasing(vec![1, 5, 3, 3, 4, 5], vec![1, 2, 5])
         );
     }
 }
