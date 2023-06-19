@@ -28,6 +28,7 @@ fn benchmark_setup(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn benchmark_with_fixed_data(c: &mut Criterion) {
     const RAND_SEED: u64 = 1847812804610510;
     const RAND_SEED_ELECTRIC_BOOGALOO: u64 = 7467834673459637;
@@ -47,5 +48,5 @@ fn benchmark_with_fixed_data(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, benchmark_with_fixed_data);
+criterion_group!(benches, benchmark_setup);
 criterion_main!(benches);
