@@ -37,8 +37,8 @@ impl Solution {
             arr2
         };
 
-        let mut previous_states: Vec<(Number, usize)> = Vec::with_capacity(arr2.len());
-        let mut next_states: Vec<(Number, usize)> = Vec::with_capacity(arr2.len());
+        let mut previous_states: Vec<(Number, usize)> = Vec::new();
+        let mut next_states: Vec<(Number, usize)> = Vec::new();
         previous_states.push((Number::Original(head), 0));
         if head != arr2[0] {
             previous_states.push((Number::Replaced(0), 1));
