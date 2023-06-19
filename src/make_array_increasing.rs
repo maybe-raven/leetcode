@@ -213,5 +213,9 @@ mod tests {
             -1,
             Solution::make_array_increasing(vec![1, 5, 3, 3, 4, 5], vec![1, 2, 5])
         );
+        assert_eq!(
+            3,
+            Solution::make_array_increasing(vec![7, 8, 9, 4, 5], vec![1, 2, 3])
+        );
     }
 }
