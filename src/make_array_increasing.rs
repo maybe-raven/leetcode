@@ -14,14 +14,20 @@ impl<T: Copy> IsNoneOr<T> for Option<T> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum Number {
+    Original(i32),
+    Replaced(usize),
+}
+
 impl Solution {
     pub fn make_array_increasing(arr1: Vec<i32>, arr2: Vec<i32>) -> i32 {
         if arr1.len() <= 1 {
             return 0;
         }
 
-        let &head = arr1
-            .first()
+        let (&head, tail) = arr1
+            .split_first()
             .expect("`arr1` has at least 2 elements past early return.");
 
         let arr2 = {
@@ -31,57 +37,57 @@ impl Solution {
             arr2
         };
 
-        let mut min_swaps_keeping_previous_original = Some(0);
-        let mut next_replacements: Vec<(usize, usize)> = Vec::new();
-        let mut previous_replacements: Vec<(usize, usize)> = Vec::new();
+        let mut previous_states: Vec<(Number, usize)> = Vec::new();
+        let mut next_states: Vec<(Number, usize)> = Vec::new();
+        previous_states.push((Number::Original(head), 0));
         if head != arr2[0] {
-            previous_replacements.push((0, 1));
+            previous_states.push((Number::Replaced(0), 1));
         }
 
-        for window in arr1.windows(2) {
-            let &[a, b] = window else { unreachable!() };
+        for &num in tail {
+            let mut min_swaps_for_original = None;
 
-            let mut min_swaps_keeping_current_original = None;
-
-            if let Some(previous_min) = min_swaps_keeping_previous_original {
-                if a < b {
-                    min_swaps_keeping_current_original = min_swaps_keeping_previous_original;
-                }
-
-                let i = match arr2.binary_search(&a) {
-                    Ok(i) => i + 1,
-                    Err(i) => i,
+            for (previous_num, swaps) in previous_states.drain(..) {
+                let mut check_and_update_min = |previous: i32| {
+                    if previous < num && min_swaps_for_original.is_none_or(|c| swaps < c) {
+                        min_swaps_for_original = Some(swaps);
+                    }
                 };
 
-                if arr2.get(i).is_some_and(|x| x != &b) {
-                    next_replacements.push((i, previous_min + 1));
+                let mut check_and_push_replacement_index = |i: usize| {
+                    if i < arr2.len() && arr2[i] != num {
+                        next_states.push((Number::Replaced(i), swaps + 1));
+                    }
+                };
+
+                match previous_num {
+                    Number::Original(a) => {
+                        check_and_update_min(a);
+
+                        let i = match arr2.binary_search(&a) {
+                            Ok(i) => i + 1,
+                            Err(i) => i,
+                        };
+
+                        check_and_push_replacement_index(i);
+                    }
+                    Number::Replaced(i) => {
+                        check_and_update_min(arr2[i]);
+                        check_and_push_replacement_index(i + 1);
+                    }
                 }
             }
 
-            for (mut replacement_index, mut replacement_count) in previous_replacements.drain(..) {
-                let a = arr2[replacement_index];
-
-                if a < b && min_swaps_keeping_current_original.is_none_or(|x| replacement_count < x)
-                {
-                    min_swaps_keeping_current_original = Some(replacement_count);
-                }
-
-                replacement_index += 1;
-                replacement_count += 1;
-
-                if arr2.get(replacement_index).is_some_and(|x| x != &b) {
-                    next_replacements.push((replacement_index, replacement_count));
-                }
+            if let Some(swaps) = min_swaps_for_original {
+                next_states.push((Number::Original(num), swaps));
             }
 
-            min_swaps_keeping_previous_original = min_swaps_keeping_current_original;
-            (previous_replacements, next_replacements) = (next_replacements, previous_replacements);
+            (previous_states, next_states) = (next_states, previous_states);
         }
 
-        previous_replacements
+        previous_states
             .into_iter()
             .map(|x| x.1 as i32)
-            .chain(min_swaps_keeping_previous_original.map(|x| x as i32))
             .min()
             .unwrap_or(-1)
     }
