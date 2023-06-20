@@ -18,14 +18,15 @@ impl Solution {
         results[k] = (sum / window_size) as i32;
         sum -= nums[0] as usize;
 
-        for (window, average) in nums
-            .windows(window_size)
+        for ((&a, &b), average) in nums
+            .iter()
+            .zip(nums.iter().skip(window_size - 1))
             .zip(results.iter_mut().skip(k))
             .skip(1)
         {
-            sum += *window.last().unwrap() as usize;
+            sum += b as usize;
             *average = (sum / window_size) as i32;
-            sum -= *window.first().unwrap() as usize;
+            sum -= a as usize;
         }
 
         results
