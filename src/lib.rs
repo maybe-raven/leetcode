@@ -4,6 +4,7 @@ pub mod equal_pairs;
 pub mod evaluate_divisions;
 pub mod four_sum;
 pub mod frequency_sort;
+pub mod get_averages;
 pub mod h_index;
 pub mod integer_to_english;
 pub mod integer_to_roman;
