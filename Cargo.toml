@@ -12,7 +12,7 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "make_array_increasing_bench"
+name = "get_averages_bench"
 harness = false
 
 [profile.bench]
