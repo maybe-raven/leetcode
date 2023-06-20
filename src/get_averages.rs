@@ -5,26 +5,27 @@ impl Solution {
     pub fn get_averages(nums: Vec<i32>, k: i32) -> Vec<i32> {
         let k = k as usize;
         let window_size = 2 * k + 1;
-        let window_size_f = window_size as f64;
         let mut results = vec![-1; nums.len()];
 
         if nums.len() < window_size {
             return results;
         }
 
-        let mut average =
-            nums[..window_size].iter().map(|&x| x as f64).sum::<f64>() / window_size_f;
-        results[k] = average.trunc() as i32;
-        average -= nums[0] as f64 / window_size_f;
+        let mut sum = nums[..window_size]
+            .iter()
+            .map(|&x| x as usize)
+            .sum::<usize>();
+        results[k] = (sum / window_size) as i32;
+        sum -= nums[0] as usize;
 
-        for (window, out) in nums
+        for (window, average) in nums
             .windows(window_size)
             .zip(results.iter_mut().skip(k))
             .skip(1)
         {
-            average += *window.last().unwrap() as f64 / window_size_f;
-            *out = average.trunc() as i32;
-            average -= *window.first().unwrap() as f64 / window_size_f;
+            sum += *window.last().unwrap() as usize;
+            *average = (sum / window_size) as i32;
+            sum -= *window.first().unwrap() as usize;
         }
 
         results
