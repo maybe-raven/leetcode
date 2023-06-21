@@ -12,7 +12,7 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "get_averages_bench"
+name = "min_cost_bench"
 harness = false
 
 [profile.bench]

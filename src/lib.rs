@@ -12,6 +12,7 @@ pub mod largest_altitude;
 pub mod make_array_increasing;
 pub mod max_level_sum;
 pub mod max_value;
+pub mod min_cost;
 pub mod minimum_difference_bst;
 pub mod num_of_ways;
 pub mod shortest_path_binary_matrix;
