@@ -11,6 +11,7 @@ pub mod integer_to_roman;
 pub mod largest_altitude;
 pub mod make_array_increasing;
 pub mod max_level_sum;
+pub mod max_profit;
 pub mod max_value;
 pub mod min_cost;
 pub mod minimum_difference_bst;
