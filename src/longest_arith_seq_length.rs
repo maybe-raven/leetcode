@@ -1,26 +1,38 @@
 //! 1027. Longest Arithmetic Subsequence
 //! https://leetcode.com/problems/longest-arithmetic-subsequence
 
-impl Solution {
-    pub fn longest_arith_seq_length(nums: Vec<i32>) -> i32 {
-        let mut max_count = 0;
+use std::collections::HashMap;
 
-        for (i, &a) in nums.iter().enumerate() {
-            for (j, &b) in nums.iter().enumerate().skip(i + 1) {
-                let step = a - b;
-                let mut count = 2;
-                let mut expected = b - step;
-                for &c in &nums[j + 1..] {
-                    if c == expected {
-                        count += 1;
-                        expected -= step;
-                    }
-                }
-                max_count = max_count.max(count);
+impl Solution {
+    // [20, 1, 15, 3, 10, 5, 8]
+    // %{
+    //   (1, -19) => 1,
+    //   (15, -5) => 1 == (20, -5)?0 + 1,
+    //   (15, 14) => 1 == (1, 14)?0 + 1,
+    //   (3, -17) => 1,
+    //   (3, 2) => 1,
+    //   (3, -12) => 1,
+    //   (10, -10) => 1,
+    //   (10, 9) => 1,
+    //   (10, -5) => 2 == (15, -5)?0 + 1,
+    // }
+    pub fn longest_arith_seq_length(nums: Vec<i32>) -> i32 {
+        if nums.len() < 2 {
+            return nums.len() as i32;
+        }
+
+        let mut memo = HashMap::new();
+
+        for (j, &end) in nums.iter().enumerate().skip(1) {
+            for (i, &start) in nums.iter().enumerate().take(j) {
+                let step = end - start;
+                let count = memo.get(&(i, step)).copied().unwrap_or(0);
+                // Every `(end, end - start)` would be unique if every element in `nums` is unique.
+                memo.insert((j, step), count + 1);
             }
         }
 
-        max_count
+        memo.values().max().unwrap() + 1
     }
 }
 
