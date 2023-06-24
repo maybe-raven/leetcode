@@ -5,16 +5,28 @@
 
 use std::collections::{btree_map::Entry, BTreeMap, BTreeSet};
 impl Solution {
-    pub fn tallest_billboard(rods: Vec<i32>) -> i32 {
+    pub fn tallest_billboard(mut rods: Vec<i32>) -> i32 {
+        let half_sum = rods.iter().sum::<i32>() / 2;
+
+        rods.sort_unstable();
         let mut memo: BTreeMap<i32, Vec<_>> = BTreeMap::new();
 
         for (i, &x) in rods.iter().enumerate() {
+            if x > half_sum {
+                break;
+            }
+
             memo.entry(x)
                 .and_modify(|v| v.push(BTreeSet::from([i])))
                 .or_insert_with(|| vec![BTreeSet::from([i])]);
 
             for (&k, v) in memo.clone().iter() {
                 let sum = x + k;
+
+                if sum > half_sum {
+                    break;
+                }
+
                 let mut v = v
                     .iter()
                     .filter_map(|s| {
