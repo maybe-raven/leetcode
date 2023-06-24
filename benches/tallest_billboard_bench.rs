@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use leetrust::tallest_billboard::Solution;
 use rand::{distributions::Uniform, rngs::StdRng, Rng, SeedableRng};
 
@@ -46,5 +46,16 @@ fn benchmark_setup(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, benchmark_setup);
+fn benchmark_fixed(c: &mut Criterion) {
+    c.bench_function("tallest_billboard", |b| {
+        b.iter(|| {
+            Solution::tallest_billboard(black_box(vec![
+                102, 101, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+                100, 100, 100, 100,
+            ]))
+        })
+    });
+}
+
+criterion_group!(benches, benchmark_fixed);
 criterion_main!(benches);
