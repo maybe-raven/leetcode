@@ -23,6 +23,7 @@ pub mod solve_sudoku;
 pub mod sort_colors;
 pub mod stone_game_ii;
 pub mod summary_ranges;
+pub mod tallest_billboard;
 pub mod three_sum;
 pub mod top_k_frequent;
 pub mod two_sum;
