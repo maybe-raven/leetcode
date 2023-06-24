@@ -1,9 +1,7 @@
 //! 956. Tallest Billboard
 //! https://leetcode.com/problems/tallest-billboard
 
-#![allow(unused, dead_code)]
-
-use std::collections::{btree_map::Entry, BTreeMap, BTreeSet};
+use std::collections::{btree_map::Entry, BTreeMap};
 impl Solution {
     pub fn tallest_billboard(mut rods: Vec<i32>) -> i32 {
         let half_sum = rods.iter().sum::<i32>() / 2;
@@ -17,8 +15,8 @@ impl Solution {
             }
 
             memo.entry(x)
-                .and_modify(|v| v.push(BTreeSet::from([i])))
-                .or_insert_with(|| vec![BTreeSet::from([i])]);
+                .and_modify(|v| v.push(vec![i]))
+                .or_insert_with(|| vec![vec![i]]);
 
             for (&k, v) in memo.clone().iter() {
                 let sum = x + k;
@@ -34,7 +32,7 @@ impl Solution {
                             None
                         } else {
                             let mut s = s.clone();
-                            s.insert(i);
+                            s.push(i);
                             Some(s)
                         }
                     })
@@ -55,7 +53,7 @@ impl Solution {
             .rev()
             .find_map(|(k, v)| {
                 for s0 in &v {
-                    if v.iter().any(|s1| s0.is_disjoint(s1)) {
+                    if v.iter().any(|s1| !s1.iter().any(|x| s0.contains(x))) {
                         return Some(k);
                     }
                 }
