@@ -12,7 +12,7 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "longest_arith_seq_length_bench"
+name = "tallest_billboard_bench"
 harness = false
 
 [profile.bench]
