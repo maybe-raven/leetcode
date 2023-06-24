@@ -46,6 +46,7 @@ fn benchmark_setup(c: &mut Criterion) {
     });
 }
 
+#[allow(dead_code)]
 fn benchmark_fixed(c: &mut Criterion) {
     c.bench_function("tallest_billboard", |b| {
         b.iter(|| {
@@ -57,5 +58,5 @@ fn benchmark_fixed(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, benchmark_fixed);
+criterion_group!(benches, benchmark_setup);
 criterion_main!(benches);

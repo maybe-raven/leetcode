@@ -3,65 +3,72 @@
 
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct SmallIndex(u8);
-
-impl SmallIndex {
-    const INVALID_VALUE: u8 = 100;
-    const INVALID: Self = Self(Self::INVALID_VALUE);
-
-    fn is_invalid(self) -> bool {
-        self.0 == Self::INVALID_VALUE
-    }
-}
-
 impl Solution {
     pub fn tallest_billboard(mut rods: Vec<i32>) -> i32 {
         let half_sum = rods.iter().sum::<i32>() / 2;
 
-        rods.sort_unstable();
-        let mut memo: BTreeMap<i32, Vec<[SmallIndex; 20]>> = BTreeMap::new();
+        const N: usize = 20;
+        assert!(rods.len() <= N);
 
-        for (i, &x) in rods.iter().enumerate() {
-            if x > half_sum {
+        rods.sort_unstable();
+        let Some((&(mut previous), tail)) = rods.split_first() else { return 0; };
+
+        let mut rods: [i32; N] = [0; N];
+        let mut counts: [u8; N] = [0; N];
+        let mut iter = rods.iter_mut().zip(counts.iter_mut());
+        let (mut num, mut count) = iter.next().unwrap();
+        *num = previous;
+        *count = 1;
+
+        for &x in tail {
+            if x == previous {
+                *count += 1;
+            } else {
+                (num, count) = iter.next().unwrap();
+                *num = x;
+                *count = 1;
+            }
+            previous = x;
+        }
+
+        let mut memo: BTreeMap<i32, Vec<[u8; 20]>> = BTreeMap::new();
+
+        for ((i, &x), &count) in rods.iter().enumerate().zip(&counts) {
+            if x > half_sum || x == 0 {
                 break;
             }
 
-            let i = i as u8;
-            let mut inner = [SmallIndex::INVALID; 20];
-            inner[0] = SmallIndex(i);
-            memo.entry(x)
-                .and_modify(|v| v.push(inner))
-                .or_insert_with(|| vec![inner]);
-
+            // TODO: Find me some real variable names. This is way too fucking toxic!
             for (&k, v) in memo.clone().iter() {
-                let sum = x + k;
+                for r in 1..=count {
+                    let sum = x * r as i32 + k;
 
+                    if sum > half_sum {
+                        break;
+                    }
+
+                    let mut v = v.clone();
+                    for s in v.iter_mut() {
+                        s[i] = r;
+                    }
+
+                    memo.entry(sum)
+                        .and_modify(|v0| v0.append(&mut v))
+                        .or_insert(v);
+                }
+            }
+
+            for r in 1..=count {
+                let sum = x * r as i32;
                 if sum > half_sum {
-                    break;
+                    continue;
                 }
 
-                let mut v = v
-                    .iter()
-                    .filter_map(|s| {
-                        if s.contains(&SmallIndex(i)) {
-                            None
-                        } else {
-                            let mut s = s.clone();
-                            for j in s.iter_mut() {
-                                if j.is_invalid() {
-                                    *j = SmallIndex(i);
-                                    break;
-                                }
-                            }
-                            Some(s)
-                        }
-                    })
-                    .collect();
-
+                let mut s = [0; 20];
+                s[i] = r;
                 memo.entry(sum)
-                    .and_modify(|v0| v0.append(&mut v))
-                    .or_insert(v);
+                    .and_modify(|v| v.push(s))
+                    .or_insert_with(|| vec![s]);
             }
         }
 
@@ -69,9 +76,12 @@ impl Solution {
             .rev()
             .find_map(|(k, v)| {
                 for s0 in &v {
-                    if v.iter()
-                        .any(|s1| !s0.iter().any(|x| x.is_invalid() ^ s1.contains(x)))
-                    {
+                    'l: for s1 in &v {
+                        for ((&r0, &r1), &count) in s0.iter().zip(s1).zip(&counts) {
+                            if count < r0 + r1 {
+                                continue 'l;
+                            }
+                        }
                         return Some(k);
                     }
                 }
@@ -102,11 +112,12 @@ mod tests {
             255,
             Solution::tallest_billboard(vec![1, 2, 4, 8, 16, 32, 64, 128, 255])
         );
-    }
-
-    #[test]
-    fn failure() {
-        // [102,101,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]
-        unimplemented!();
+        assert_eq!(
+            900,
+            Solution::tallest_billboard(vec![
+                102, 101, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+                100, 100, 100, 100,
+            ])
+        );
     }
 }
