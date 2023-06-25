@@ -1,94 +1,62 @@
 //! 956. Tallest Billboard
 //! https://leetcode.com/problems/tallest-billboard
 
-use std::collections::BTreeMap;
+use std::{cmp::Ordering, collections::BTreeMap};
 
 impl Solution {
     pub fn tallest_billboard(mut rods: Vec<i32>) -> i32 {
-        let half_sum = rods.iter().sum::<i32>() / 2;
+        rods.sort_unstable_by(|a, b| b.cmp(a));
 
-        const N: usize = 20;
-        assert!(rods.len() <= N);
+        let mut sum = rods.iter().sum::<i32>();
 
-        rods.sort_unstable();
-        let Some((&(mut previous), tail)) = rods.split_first() else { return 0; };
+        let n = match rods.iter().enumerate().find_map(|(i, &x)| {
+            let double = 2 * x;
 
-        let mut rods: [i32; N] = [0; N];
-        let mut counts: [u8; N] = [0; N];
-        let mut iter = rods.iter_mut().zip(counts.iter_mut());
-        let (mut num, mut count) = iter.next().unwrap();
-        *num = previous;
-        *count = 1;
-
-        for &x in tail {
-            if x == previous {
-                *count += 1;
-            } else {
-                (num, count) = iter.next().unwrap();
-                *num = x;
-                *count = 1;
-            }
-            previous = x;
-        }
-
-        let mut memo: BTreeMap<i32, Vec<[u8; 20]>> = BTreeMap::new();
-
-        for ((i, &x), &count) in rods.iter().enumerate().zip(&counts) {
-            if x > half_sum || x == 0 {
-                break;
-            }
-
-            // TODO: Find me some real variable names. This is way too fucking toxic!
-            for (&k, v) in memo.clone().iter() {
-                for r in 1..=count {
-                    let sum = x * r as i32 + k;
-
-                    if sum > half_sum {
-                        break;
-                    }
-
-                    let mut v = v.clone();
-                    for s in v.iter_mut() {
-                        s[i] = r;
-                    }
-
-                    memo.entry(sum)
-                        .and_modify(|v0| v0.append(&mut v))
-                        .or_insert(v);
+            match double.cmp(&sum) {
+                Ordering::Less => Some(Err(i)),
+                Ordering::Equal => Some(Ok(x)),
+                Ordering::Greater => {
+                    sum -= x;
+                    None
                 }
             }
+        }) {
+            Some(Err(n)) => n,
+            Some(Ok(x)) => return x,
+            None => return 0,
+        };
 
-            for r in 1..=count {
-                let sum = x * r as i32;
-                if sum > half_sum {
+        if rods.len() - n < 2 {
+            return 0;
+        }
+
+        let mut memo = BTreeMap::from([(0, 0)]);
+
+        for x in rods.into_iter().skip(n) {
+            for (diff, taller) in memo.clone() {
+                let mut height = taller + x;
+                memo.entry(diff + x)
+                    .and_modify(|h| *h = (*h).max(height))
+                    .or_insert(height);
+
+                if diff == 0 {
                     continue;
                 }
 
-                let mut s = [0; 20];
-                s[i] = r;
-                memo.entry(sum)
-                    .and_modify(|v| v.push(s))
-                    .or_insert_with(|| vec![s]);
+                if diff < x {
+                    height -= diff;
+                    memo.entry(x - diff)
+                        .and_modify(|h| *h = (*h).max(height))
+                        .or_insert(height);
+                } else {
+                    memo.entry(diff - x)
+                        .and_modify(|h| *h = (*h).max(taller))
+                        .or_insert(taller);
+                }
             }
         }
 
-        memo.into_iter()
-            .rev()
-            .find_map(|(k, v)| {
-                for s0 in &v {
-                    'l: for s1 in &v {
-                        for ((&r0, &r1), &count) in s0.iter().zip(s1).zip(&counts) {
-                            if count < r0 + r1 {
-                                continue 'l;
-                            }
-                        }
-                        return Some(k);
-                    }
-                }
-
-                None
-            })
-            .unwrap_or(0) as i32
+        memo.get(&0).copied().unwrap_or(0)
     }
 }
 
