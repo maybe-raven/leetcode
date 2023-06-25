@@ -5,36 +5,34 @@ const MOD: i32 = 1000000007;
 
 impl Solution {
     pub fn count_routes(locations: Vec<i32>, start: i32, finish: i32, fuel: i32) -> i32 {
-        let mut memo = [[0; 100]; 201];
-        for x in memo.iter_mut().take(fuel as usize + 1) {
-            x[finish as usize] = 1;
-        }
+        let start = start as usize;
+        let finish = finish as usize;
+        let fuel = fuel as usize;
 
-        let fuel_costs_table: Vec<Vec<_>> = locations
+        let mut memo: Vec<Vec<i32>> = (0..locations.len())
+            .map(|i| vec![if i == finish { 1 } else { 0 }; fuel + 1])
+            .collect();
+
+        let fuel_costs_table: Vec<Vec<i32>> = locations
             .iter()
             .map(|x| locations.iter().map(|y| (x - y).abs()).collect())
             .collect();
 
         for f in 1..=fuel {
-            let fu = f as usize;
+            let fi = f as i32;
             for (i, costs) in fuel_costs_table.iter().enumerate() {
                 let mut n = 0;
                 for (j, &cost) in costs.iter().enumerate() {
-                    if let Ok(cost) = usize::try_from(f - cost) {
-                        n += memo[cost][j];
+                    if let Ok(cost) = usize::try_from(fi - cost) {
+                        n += memo[j][cost];
                         n %= MOD;
                     }
                 }
-
-                if n == 0 {
-                    memo[fu][i] = memo[fu - 1][i];
-                } else {
-                    memo[fu][i] = n;
-                }
+                memo[i][f] = n;
             }
         }
 
-        memo[fuel as usize][start as usize]
+        memo[start][fuel]
     }
 }
 
