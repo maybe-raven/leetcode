@@ -12,7 +12,7 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "tallest_billboard_bench"
+name = "count_routes_bench"
 harness = false
 
 [profile.bench]
