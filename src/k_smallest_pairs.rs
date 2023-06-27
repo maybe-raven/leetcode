@@ -84,24 +84,25 @@ pub struct Solution;
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
+
     use super::*;
 
     fn assert_shit(expected: Vec<Vec<i32>>, output: Vec<Vec<i32>>) {
         assert_eq!(expected.len(), output.len());
 
+        let mut sums: VecDeque<i32> = expected.iter().map(|x| x.iter().sum()).collect();
+
         for pair in &output {
             assert_eq!(2, pair.len());
-        }
-
-        for pair in expected {
-            {
-                assert!(
-                    output.iter().any(|x| pair.iter().all(|y| x.contains(y))),
-                    "{:?} doesn't contain {:?}",
-                    &output,
-                    &pair
-                );
-            }
+            assert_eq!(
+                sums.pop_front().unwrap(),
+                pair.iter().sum(),
+                "expected: {:?}\ngot: {:?}\npair {:?} not expected",
+                expected,
+                output,
+                pair
+            );
         }
     }
 
