@@ -1,33 +1,79 @@
 //! 373. Find K Pairs with Smallest Sums
 //! https://leetcode.com/problems/find-k-pairs-with-smallest-sums
 
+use std::{
+    cmp::{Ordering, Reverse},
+    collections::BinaryHeap,
+    ops::Add,
+};
+
+#[derive(Debug)]
+struct Item<T, I> {
+    sum: T,
+    head: (T, T),
+    source: I,
+}
+
+impl<T: Add<T, Output = T> + Copy, I: Iterator<Item = (T, T)>> Item<T, I> {
+    fn new(mut source: I) -> Option<Self> {
+        if let Some(head) = source.next() {
+            Some(Self {
+                sum: head.0 + head.1,
+                head,
+                source,
+            })
+        } else {
+            None
+        }
+    }
+
+    fn next(&mut self) -> bool {
+        if let Some(head) = self.source.next() {
+            self.sum = head.0 + head.1;
+            self.head = head;
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl<T: Eq, I> Eq for Item<T, I> {}
+impl<T: PartialEq, I> PartialEq for Item<T, I> {
+    fn eq(&self, other: &Self) -> bool {
+        self.sum.eq(&other.sum)
+    }
+}
+
+impl<T: PartialOrd, I> PartialOrd for Item<T, I> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.sum.partial_cmp(&other.sum)
+    }
+}
+
+impl<T: Ord, I> Ord for Item<T, I> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.sum.cmp(&other.sum)
+    }
+}
+
 impl Solution {
     pub fn k_smallest_pairs(nums1: Vec<i32>, nums2: Vec<i32>, k: i32) -> Vec<Vec<i32>> {
         let k = k as usize;
-        let mut iterators: Vec<_> = nums1
+        let mut heap: BinaryHeap<_> = nums1
             .iter()
-            .map(|&x| nums2.iter().map(move |&y| (x, y)).take(k).peekable())
+            .filter_map(|&x| Item::new(nums2.iter().map(move |&y| (x, y))).map(|x| Reverse(x)))
             .collect();
 
         let mut results = Vec::with_capacity(k);
 
         for _ in 0..k {
-            let Some((_, iter)) = iterators
-                .iter_mut()
-                .filter_map(|x| {
-                    if let Some(&(a, b)) = x.peek() {
-                        Some((a + b, x))
-                    } else {
-                        None
-                    }
-                })
-                .min_by_key(|x| x.0)
-            else {
-                return results;
-            };
-
-            let (a, b) = iter.next().unwrap();
+            let Some(Reverse(mut item)) = heap.pop() else { return results; };
+            let (a, b) = item.head;
             results.push(vec![a, b]);
+            if item.next() {
+                heap.push(Reverse(item));
+            }
         }
 
         results
