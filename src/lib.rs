@@ -9,6 +9,7 @@ pub mod get_averages;
 pub mod h_index;
 pub mod integer_to_english;
 pub mod integer_to_roman;
+pub mod k_smallest_pairs;
 pub mod largest_altitude;
 pub mod longest_arith_seq_length;
 pub mod make_array_increasing;
