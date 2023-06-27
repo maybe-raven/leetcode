@@ -12,7 +12,7 @@ criterion = "0.3"
 rand = "0.8.5"
 
 [[bench]]
-name = "total_cost_bench"
+name = "k_smallest_pairs_bench"
 harness = false
 
 [profile.bench]
