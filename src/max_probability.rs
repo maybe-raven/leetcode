@@ -1,7 +1,41 @@
 //! 1514. Path with Maximum Probability
 //! https://leetcode.com/problems/path-with-maximum-probability
 
-use std::collections::VecDeque;
+use std::{cmp::Ordering, collections::BinaryHeap};
+
+#[derive(Debug, Clone, Copy)]
+struct Item {
+    node: usize,
+    probability: f64,
+}
+
+impl Item {
+    fn new(node: usize, probability: f64) -> Self {
+        Self { node, probability }
+    }
+}
+
+impl Eq for Item {}
+impl PartialEq for Item {
+    fn eq(&self, other: &Self) -> bool {
+        self.node.eq(&other.node) && self.probability.eq(&other.probability)
+    }
+}
+
+impl Ord for Item {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.probability.partial_cmp(&other.probability).unwrap() {
+            Ordering::Equal => self.node.cmp(&other.node),
+            x => x,
+        }
+    }
+}
+
+impl PartialOrd for Item {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(&other))
+    }
+}
 
 impl Solution {
     pub fn max_probability(
@@ -25,27 +59,28 @@ impl Solution {
             edge_map[b].push((a, prob));
         }
 
-        let mut memo: Vec<f64> = vec![0.0; n];
-        memo[end as usize] = 1.0;
+        let mut memo = vec![0.0; n];
+        memo[end] = 1.0;
 
-        let mut queue = VecDeque::new();
-        queue.push_back(end);
+        let mut queue = BinaryHeap::new();
+        queue.push(Item::new(end, 1.0));
 
-        while let Some(a) = queue.pop_front() {
-            let memo_prob = memo[a as usize];
+        while let Some(a) = queue.pop() {
+            if a.node == start {
+                return a.probability;
+            }
 
-            for &(b, mut prob) in &edge_map[a] {
-                prob *= memo_prob;
+            for &(b, mut prob) in &edge_map[a.node] {
+                prob *= a.probability;
 
-                let old_prob = memo.get_mut(b as usize).unwrap();
-                if *old_prob < prob {
-                    *old_prob = prob;
-                    queue.push_back(b);
+                if memo[b] < prob {
+                    memo[b] = prob;
+                    queue.push(Item::new(b, prob));
                 }
             }
         }
 
-        memo[start as usize]
+        0.0
     }
 }
 
@@ -80,6 +115,23 @@ mod tests {
         assert_eq!(
             0.0,
             Solution::max_probability(3, vec![vec![0, 1]], vec![0.5], 0, 2,)
+        );
+        assert_eq!(
+            0.0,
+            Solution::max_probability(
+                6,
+                vec![
+                    vec![0, 1],
+                    vec![0, 2],
+                    vec![1, 2],
+                    vec![3, 4],
+                    vec![3, 5],
+                    vec![4, 5]
+                ],
+                vec![0.5; 6],
+                0,
+                4
+            )
         );
     }
 }
