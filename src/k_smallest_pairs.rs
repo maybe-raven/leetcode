@@ -16,15 +16,11 @@ struct Item<T, I> {
 
 impl<T: Add<T, Output = T> + Copy, I: Iterator<Item = (T, T)>> Item<T, I> {
     fn new(mut source: I) -> Option<Self> {
-        if let Some(head) = source.next() {
-            Some(Self {
-                sum: head.0 + head.1,
-                head,
-                source,
-            })
-        } else {
-            None
-        }
+        source.next().map(|head| Self {
+            sum: head.0 + head.1,
+            head,
+            source,
+        })
     }
 
     fn next(&mut self) -> bool {
@@ -62,7 +58,7 @@ impl Solution {
         let k = k as usize;
         let mut heap: BinaryHeap<_> = nums1
             .iter()
-            .filter_map(|&x| Item::new(nums2.iter().map(move |&y| (x, y))).map(|x| Reverse(x)))
+            .filter_map(|&x| Item::new(nums2.iter().map(move |&y| (x, y))).map(Reverse))
             .collect();
 
         let mut results = Vec::with_capacity(k);

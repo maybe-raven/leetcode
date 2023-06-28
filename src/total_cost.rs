@@ -7,7 +7,7 @@ impl Solution {
     pub fn total_cost(costs: Vec<i32>, k: i32, candidates: i32) -> i64 {
         assert!(1 <= k && k as usize <= costs.len());
         assert!(1 <= candidates && candidates as usize <= costs.len());
-        assert!(1 <= costs.len());
+        assert!(!costs.is_empty());
 
         let k = k as usize;
         let n = candidates as usize;
