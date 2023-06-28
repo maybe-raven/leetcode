@@ -14,6 +14,7 @@ pub mod largest_altitude;
 pub mod longest_arith_seq_length;
 pub mod make_array_increasing;
 pub mod max_level_sum;
+pub mod max_probability;
 pub mod max_profit;
 pub mod max_value;
 pub mod min_cost;
