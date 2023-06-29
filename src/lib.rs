@@ -20,6 +20,7 @@ pub mod max_value;
 pub mod min_cost;
 pub mod minimum_difference_bst;
 pub mod num_of_ways;
+pub mod shortest_path_all_keys;
 pub mod shortest_path_binary_matrix;
 pub mod snapshot_array;
 pub mod solve_sudoku;
