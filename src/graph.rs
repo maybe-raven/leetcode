@@ -22,10 +22,24 @@ impl<Node, Weight> ConnectionTo<Node, Weight> {
     }
 }
 
+/// Represent a bi-directional connection in a graph as `ConnectionTo(target, weight)`.
+pub struct Connection<Node, Weight>(Node, Node, Weight);
+
+impl<Node, Weight> Connection<Node, Weight> {
+    pub fn new(lhs: Node, rhs: Node, weight: Weight) -> Self {
+        Self(lhs, rhs, weight)
+    }
+}
+
 /// A collection of outgoing directional connections of a node in a graph.
 pub trait ConnectionCollection<Node, Weight> {
     fn add_connection(&mut self, connection: ConnectionTo<Node, Weight>);
     fn get_weight_to(&self, target: &Node) -> Option<&Weight>;
+}
+
+pub trait BidirectionalConnectionCollection<Node, Weight> {
+    fn add_connection(&mut self, connection: Connection<Node, Weight>);
+    fn get_connection(&self, node: &Node) -> Option<&Weight>;
 }
 
 /// A graph with directional connections.
@@ -41,16 +55,16 @@ pub trait Graph<Node, Weight, Connections> {
 
 /// A trait to add functions to some types that already implement `Graph`.
 /// Type parameters are the same as `Graph`, just with more specific bounds.
-pub trait GraphSolver<'a, Node, Weight, Connections>: Graph<Node, Weight, Connections>
+pub trait GraphSolver<Node, Weight, Connections>: Graph<Node, Weight, Connections>
 where
-    Node: Eq + Hash + 'a,
-    Weight: Copy + Combine + One + 'a,
-    Connections: ConnectionCollection<Node, Weight> + 'a,
-    &'a Connections: IntoIterator,
-    <&'a Connections as IntoIterator>::Item: Into<ConnectionTo<&'a Node, &'a Weight>>,
+    Node: Eq + Hash,
+    Weight: Copy + Combine + One,
+    Connections: ConnectionCollection<Node, Weight>,
+    for<'a> &'a Connections: IntoIterator,
+    for<'a> <&'a Connections as IntoIterator>::Item: Into<ConnectionTo<&'a Node, &'a Weight>>,
 {
     /// Find the weight from the `start` node to the `end` node.
-    fn find_total_weight(&'a self, start: &'a Node, end: &Node) -> Option<Weight> {
+    fn find_total_weight<'a>(&'a self, start: &'a Node, end: &Node) -> Option<Weight> {
         if !self.has_node(start) || !self.has_node(end) {
             return None;
         }
@@ -67,12 +81,16 @@ where
     /// Internal function. Don't call this.
     /// Find *a* path from `start` to `end` recursively using DFS.
     /// Returns the total weight of all the connections between `start` and `end`.
-    fn find_total_weight_recursively(
+    fn find_total_weight_recursively<'a>(
         &'a self,
         start: &Node,
         end: &Node,
         visited: &mut HashSet<&'a Node>,
-    ) -> Option<Weight> {
+    ) -> Option<Weight>
+    where
+        Connections: 'a,
+        Weight: 'a,
+    {
         // <Self as Graph<Node, Weight, Connections>>::get_connections_from(self: &'b Self, start: &'c Node) -> Option<&'b Connections>;
         // edges: &'b Connections;
         let edges = self
@@ -110,13 +128,13 @@ where
 
 /// Automatically implement this trait for all types that already implements `Graph`
 /// and satisfy these additional constraints which are required for `GraphSolver` to work.
-impl<'a, Node, Weight, Connections, G> GraphSolver<'a, Node, Weight, Connections> for G
+impl<Node, Weight, Connections, G> GraphSolver<Node, Weight, Connections> for G
 where
-    Node: Eq + Hash + 'a,
-    Weight: Copy + Combine + One + 'a,
-    Connections: ConnectionCollection<Node, Weight> + 'a,
-    &'a Connections: IntoIterator,
-    <&'a Connections as IntoIterator>::Item: Into<ConnectionTo<&'a Node, &'a Weight>>,
+    Node: Eq + Hash,
+    Weight: Copy + Combine + One,
+    Connections: ConnectionCollection<Node, Weight>,
+    for<'a> &'a Connections: IntoIterator,
+    for<'a> <&'a Connections as IntoIterator>::Item: Into<ConnectionTo<&'a Node, &'a Weight>>,
     G: Graph<Node, Weight, Connections>,
 {
 }
