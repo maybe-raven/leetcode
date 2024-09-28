@@ -1,0 +1,4 @@
+(executable
+ (public_name freq)
+ (name freq)
+ (libraries str))
